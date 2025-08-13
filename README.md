@@ -1,5 +1,7 @@
 # Agent Memory Course
 
+[Course Presentation](https://docs.google.com/presentation/d/1fMb6Z0HcwjmN_BT4-HhRHHQ1ysohlzDzYDOg-Foldrc/edit?slide=id.p1#slide=id.p1) | [Agent Memory Discord Server](https://discord.gg/kGs5hKy8n8)
+
 This repository contains companion code and examples for the **AI Memory Management in Agentic Systems** course.
 
 ## Course Link
