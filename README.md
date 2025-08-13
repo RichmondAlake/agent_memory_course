@@ -16,6 +16,7 @@ Viewers can access the course to watch the recording of the instructor going thr
 | **LangMem** | [`langmem/memory_augmented_agent_with_mongodb.ipynb`](langmem/memory_augmented_agent_with_mongodb.ipynb) | Memory-augmented agent implementation using MongoDB |
 | **Mem0** | [`mem0/memory_augmented_agent_with_mem0_mongodb.ipynb`](mem0/memory_augmented_agent_with_mem0_mongodb.ipynb) | Memory-augmented agent using Mem0 library with MongoDB |
 | **Memory Bank** | [`memory_bank/memory_augmented_agent_with_local_memory.ipynb`](memory_bank/memory_augmented_agent_with_local_memory.ipynb) | Memory-augmented agent with local memory implementation |
+| **MemoRizz** | [`memorizz/memagent_single_agent.ipynb`](memorizz/memagent_single_agent.ipynb) | Single agent memory implementation with MemoRizz framework |
 
 ## Purpose of This Repository
 
