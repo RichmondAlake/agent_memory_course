@@ -1,0 +1,396 @@
+-- ==============================================================================
+-- Oracle Relational Schema for JSON Duality Views
+-- This replaces the hybrid JSON-in-CLOB approach with proper relational tables
+-- ==============================================================================
+
+-- ==============================================================================
+-- AGENTS TABLE (Main agent configuration)
+-- ==============================================================================
+CREATE TABLE agents (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    agent_id VARCHAR2(255) UNIQUE NOT NULL,
+    name VARCHAR2(255),
+    instruction CLOB,
+    application_mode VARCHAR2(50) DEFAULT 'assistant',
+    max_steps NUMBER(10) DEFAULT 20,
+    tool_access VARCHAR2(50) DEFAULT 'private',
+    semantic_cache NUMBER(1) DEFAULT 0,  -- Boolean: 0=false, 1=true
+    verbose NUMBER(1) DEFAULT 0,         -- Boolean: 0=false, 1=true
+    embedding VECTOR,                     -- For semantic search on agents
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT chk_agents_semantic_cache CHECK (semantic_cache IN (0, 1)),
+    CONSTRAINT chk_agents_verbose CHECK (verbose IN (0, 1))
+);
+
+-- Indexes
+CREATE INDEX idx_agents_agent_id ON agents(agent_id);
+CREATE INDEX idx_agents_application_mode ON agents(application_mode);
+CREATE INDEX idx_agents_created_at ON agents(created_at);
+
+-- ==============================================================================
+-- AGENT_LLM_CONFIGS TABLE (LLM configuration for agents)
+-- ==============================================================================
+CREATE TABLE agent_llm_configs (
+    agent_id RAW(16) PRIMARY KEY,
+    provider VARCHAR2(50) NOT NULL,           -- 'openai', 'azure', 'anthropic', etc.
+    model VARCHAR2(100) NOT NULL,             -- 'gpt-4o-mini', 'claude-3', etc.
+    temperature NUMBER(3,2),                  -- 0.00 to 1.00
+    max_tokens NUMBER(10),
+    top_p NUMBER(3,2),
+    frequency_penalty NUMBER(3,2),
+    presence_penalty NUMBER(3,2),
+    additional_config CLOB CHECK (additional_config IS JSON),  -- Provider-specific config
+
+    -- Foreign key
+    CONSTRAINT fk_agent_llm_config FOREIGN KEY (agent_id)
+        REFERENCES agents(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_agent_llm_provider ON agent_llm_configs(provider);
+CREATE INDEX idx_agent_llm_model ON agent_llm_configs(model);
+
+-- ==============================================================================
+-- AGENT_MEMORIES TABLE (Many-to-many: agents to memory_ids)
+-- ==============================================================================
+CREATE TABLE agent_memories (
+    agent_id RAW(16) NOT NULL,
+    memory_id VARCHAR2(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Composite primary key
+    PRIMARY KEY (agent_id, memory_id),
+
+    -- Foreign key
+    CONSTRAINT fk_agent_memories FOREIGN KEY (agent_id)
+        REFERENCES agents(id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_agent_memories_memory_id ON agent_memories(memory_id);
+
+-- ==============================================================================
+-- AGENT_DELEGATES TABLE (Many-to-many: agents to delegate agents)
+-- ==============================================================================
+CREATE TABLE agent_delegates (
+    agent_id RAW(16) NOT NULL,
+    delegate_agent_id RAW(16) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Composite primary key
+    PRIMARY KEY (agent_id, delegate_agent_id),
+
+    -- Foreign keys
+    CONSTRAINT fk_agent_delegates_parent FOREIGN KEY (agent_id)
+        REFERENCES agents(id) ON DELETE CASCADE,
+    CONSTRAINT fk_agent_delegates_child FOREIGN KEY (delegate_agent_id)
+        REFERENCES agents(id) ON DELETE CASCADE
+);
+
+-- ==============================================================================
+-- PERSONAS TABLE (Agent personas/roles)
+-- ==============================================================================
+CREATE TABLE personas (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    persona_id VARCHAR2(255) UNIQUE NOT NULL,
+    name VARCHAR2(255) NOT NULL,
+    role_type VARCHAR2(50),                   -- 'expert', 'critic', 'coordinator', etc.
+    background CLOB,
+    traits CLOB CHECK (traits IS JSON),       -- JSON array of traits
+    expertise CLOB CHECK (expertise IS JSON), -- JSON array of expertise areas
+    memory_id VARCHAR2(255),
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Foreign key to agents (required for nested Duality Views)
+    CONSTRAINT fk_personas_agent FOREIGN KEY (agent_id)
+        REFERENCES agents(agent_id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_personas_persona_id ON personas(persona_id);
+CREATE INDEX idx_personas_role_type ON personas(role_type);
+CREATE INDEX idx_personas_memory_id ON personas(memory_id);
+CREATE INDEX idx_personas_agent_id ON personas(agent_id);
+
+-- ==============================================================================
+-- TOOLBOX TABLE (Agent tools)
+-- ==============================================================================
+CREATE TABLE toolbox (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    tool_id VARCHAR2(255) UNIQUE NOT NULL,
+    name VARCHAR2(255) NOT NULL,
+    description CLOB,
+    signature VARCHAR2(1000),
+    docstring CLOB,
+    tool_type VARCHAR2(50),
+    parameters CLOB CHECK (parameters IS JSON),  -- JSON schema of parameters
+    memory_id VARCHAR2(255),
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Foreign key to agents (required for nested Duality Views)
+    CONSTRAINT fk_toolbox_agent FOREIGN KEY (agent_id)
+        REFERENCES agents(agent_id) ON DELETE CASCADE
+);
+
+-- Indexes
+CREATE INDEX idx_toolbox_tool_id ON toolbox(tool_id);
+CREATE INDEX idx_toolbox_name ON toolbox(name);
+CREATE INDEX idx_toolbox_tool_type ON toolbox(tool_type);
+CREATE INDEX idx_toolbox_memory_id ON toolbox(memory_id);
+CREATE INDEX idx_toolbox_agent_id ON toolbox(agent_id);
+
+-- ==============================================================================
+-- CONVERSATION_MEMORY TABLE (Conversation history)
+-- ==============================================================================
+CREATE TABLE conversation_memory (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    memory_id VARCHAR2(255) NOT NULL,
+    conversation_id VARCHAR2(255),
+    role VARCHAR2(50) NOT NULL,              -- 'user', 'assistant', 'system', 'tool'
+    content CLOB NOT NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+
+    -- Constraints
+    CONSTRAINT chk_conv_role CHECK (role IN ('user', 'assistant', 'system', 'tool'))
+);
+
+-- Indexes
+CREATE INDEX idx_conv_memory_id ON conversation_memory(memory_id);
+CREATE INDEX idx_conv_conversation_id ON conversation_memory(conversation_id);
+CREATE INDEX idx_conv_timestamp ON conversation_memory(timestamp);
+CREATE INDEX idx_conv_agent_id ON conversation_memory(agent_id);
+
+-- ==============================================================================
+-- LONG_TERM_MEMORY TABLE (Facts, knowledge)
+-- ==============================================================================
+CREATE TABLE long_term_memory (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    memory_id VARCHAR2(255) NOT NULL,
+    content CLOB NOT NULL,
+    memory_type VARCHAR2(50),
+    importance NUMBER(3,2),                   -- 0.00 to 1.00
+    last_accessed TIMESTAMP,
+    access_count NUMBER(10) DEFAULT 0,
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_ltm_memory_id ON long_term_memory(memory_id);
+CREATE INDEX idx_ltm_memory_type ON long_term_memory(memory_type);
+CREATE INDEX idx_ltm_importance ON long_term_memory(importance);
+CREATE INDEX idx_ltm_agent_id ON long_term_memory(agent_id);
+
+-- ==============================================================================
+-- SHORT_TERM_MEMORY TABLE (Working memory, temporary context)
+-- ==============================================================================
+CREATE TABLE short_term_memory (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    memory_id VARCHAR2(255) NOT NULL,
+    content CLOB NOT NULL,
+    memory_type VARCHAR2(50),
+    ttl NUMBER(10),                           -- Time-to-live in seconds
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_stm_memory_id ON short_term_memory(memory_id);
+CREATE INDEX idx_stm_expires_at ON short_term_memory(expires_at);
+CREATE INDEX idx_stm_agent_id ON short_term_memory(agent_id);
+
+-- ==============================================================================
+-- WORKFLOW_MEMORY TABLE (Workflow states and outcomes)
+-- ==============================================================================
+CREATE TABLE workflow_memory (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    workflow_id VARCHAR2(255) UNIQUE NOT NULL,
+    name VARCHAR2(255) NOT NULL,
+    description CLOB,
+    steps CLOB CHECK (steps IS JSON),         -- JSON array of workflow steps
+    current_step NUMBER(10) DEFAULT 0,
+    status VARCHAR2(50) DEFAULT 'pending',
+    outcome CLOB CHECK (outcome IS JSON),     -- JSON result of workflow
+    memory_id VARCHAR2(255),
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT chk_workflow_status CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled'))
+);
+
+-- Indexes
+CREATE INDEX idx_workflow_workflow_id ON workflow_memory(workflow_id);
+CREATE INDEX idx_workflow_status ON workflow_memory(status);
+CREATE INDEX idx_workflow_memory_id ON workflow_memory(memory_id);
+CREATE INDEX idx_workflow_agent_id ON workflow_memory(agent_id);
+
+-- ==============================================================================
+-- SHARED_MEMORY TABLE (Multi-agent shared memory)
+-- ==============================================================================
+CREATE TABLE shared_memory (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    memory_id VARCHAR2(255) NOT NULL,
+    content CLOB NOT NULL,
+    memory_type VARCHAR2(50),
+    scope VARCHAR2(50) DEFAULT 'global',      -- 'global', 'team', 'private'
+    owner_agent_id VARCHAR2(255),
+    access_list CLOB CHECK (access_list IS JSON),  -- JSON array of agent IDs
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT chk_shared_scope CHECK (scope IN ('global', 'team', 'private'))
+);
+
+-- Indexes
+CREATE INDEX idx_shared_memory_id ON shared_memory(memory_id);
+CREATE INDEX idx_shared_scope ON shared_memory(scope);
+CREATE INDEX idx_shared_owner ON shared_memory(owner_agent_id);
+
+-- ==============================================================================
+-- SUMMARIES TABLE (Conversation/memory summaries)
+-- ==============================================================================
+CREATE TABLE summaries (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    summary_id VARCHAR2(255) UNIQUE NOT NULL,
+    content CLOB NOT NULL,
+    original_memory_ids CLOB CHECK (original_memory_ids IS JSON),  -- JSON array
+    summary_type VARCHAR2(50),
+    memory_id VARCHAR2(255),
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes
+CREATE INDEX idx_summaries_summary_id ON summaries(summary_id);
+CREATE INDEX idx_summaries_type ON summaries(summary_type);
+CREATE INDEX idx_summaries_memory_id ON summaries(memory_id);
+CREATE INDEX idx_summaries_agent_id ON summaries(agent_id);
+
+-- ==============================================================================
+-- SEMANTIC_CACHE TABLE (Query response cache)
+-- ==============================================================================
+CREATE TABLE semantic_cache (
+    id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
+    cache_key VARCHAR2(255) NOT NULL,
+    query_text CLOB NOT NULL,
+    response CLOB NOT NULL,
+    scope VARCHAR2(50) DEFAULT 'local',       -- 'local', 'global', 'agent'
+    similarity_threshold NUMBER(3,2) DEFAULT 0.85,
+    hit_count NUMBER(10) DEFAULT 0,
+    agent_id VARCHAR2(255),
+    embedding VECTOR,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+
+    -- Constraints
+    CONSTRAINT chk_cache_scope CHECK (scope IN ('local', 'global', 'agent'))
+);
+
+-- Indexes
+CREATE INDEX idx_cache_cache_key ON semantic_cache(cache_key);
+CREATE INDEX idx_cache_scope ON semantic_cache(scope);
+CREATE INDEX idx_cache_agent_id ON semantic_cache(agent_id);
+CREATE INDEX idx_cache_expires_at ON semantic_cache(expires_at);
+
+-- ==============================================================================
+-- VECTOR INDEXES (For similarity search - Oracle 23ai+)
+-- ==============================================================================
+
+-- Agents vector index
+CREATE VECTOR INDEX idx_agents_vec ON agents(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Personas vector index
+CREATE VECTOR INDEX idx_personas_vec ON personas(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Toolbox vector index
+CREATE VECTOR INDEX idx_toolbox_vec ON toolbox(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Conversation memory vector index
+CREATE VECTOR INDEX idx_conv_vec ON conversation_memory(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Long-term memory vector index
+CREATE VECTOR INDEX idx_ltm_vec ON long_term_memory(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Short-term memory vector index
+CREATE VECTOR INDEX idx_stm_vec ON short_term_memory(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Workflow memory vector index
+CREATE VECTOR INDEX idx_workflow_vec ON workflow_memory(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Shared memory vector index
+CREATE VECTOR INDEX idx_shared_vec ON shared_memory(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Summaries vector index
+CREATE VECTOR INDEX idx_summaries_vec ON summaries(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- Semantic cache vector index
+CREATE VECTOR INDEX idx_cache_vec ON semantic_cache(embedding)
+ORGANIZATION NEIGHBOR PARTITIONS
+DISTANCE COSINE
+WITH TARGET ACCURACY 95;
+
+-- ==============================================================================
+-- COMMENTS (Documentation)
+-- ==============================================================================
+
+COMMENT ON TABLE agents IS 'Main agents table with configuration';
+COMMENT ON TABLE agent_llm_configs IS 'LLM configuration for each agent';
+COMMENT ON TABLE agent_memories IS 'Association between agents and memory IDs';
+COMMENT ON TABLE agent_delegates IS 'Multi-agent delegation relationships';
+COMMENT ON TABLE personas IS 'Agent personas and role configurations';
+COMMENT ON TABLE toolbox IS 'Agent tools and functions';
+COMMENT ON TABLE conversation_memory IS 'Conversation history and interactions';
+COMMENT ON TABLE long_term_memory IS 'Persistent facts and knowledge';
+COMMENT ON TABLE short_term_memory IS 'Temporary working memory with TTL';
+COMMENT ON TABLE workflow_memory IS 'Workflow states and execution history';
+COMMENT ON TABLE shared_memory IS 'Multi-agent shared memory space';
+COMMENT ON TABLE summaries IS 'Memory summaries for compression';
+COMMENT ON TABLE semantic_cache IS 'Query-response semantic cache';
