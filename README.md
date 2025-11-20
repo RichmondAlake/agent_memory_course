@@ -14,11 +14,11 @@ Viewers can access the course to watch the recording of the instructor going thr
 
 | Library/Approach | Notebook | Description |
 |------------------|----------|-------------|
-| **Information Retrieval** | [`parrt1/information_retrieval/zero_to_hero_with_genai_with_mongodb_openai.ipynb`](information_retrieval/zero_to_hero_with_genai_with_mongodb_openai.ipynb) | Zero to hero guide using MongoDB and OpenAI for generative AI applications |
+| **Information Retrieval** | [`part1/information_retrieval/zero_to_hero_with_genai_with_mongodb_openai.ipynb`](part1/information_retrieval/zero_to_hero_with_genai_with_mongodb_openai.ipynb) | Zero to hero guide using MongoDB and OpenAI for generative AI applications |
 | **LangMem** | [`part1/langmem/memory_augmented_agent_with_mongodb.ipynb`](part1/langmem/memory_augmented_agent_with_mongodb.ipynb) | Memory-augmented agent implementation using MongoDB |
-| **Mem0** | [`part1/mem0/memory_augmented_agent_with_mem0_mongodb.ipynb`](mem0/memory_augmented_agent_with_mem0_mongodb.ipynb) | Memory-augmented agent using Mem0 library with MongoDB |
-| **Memory Bank** | [`memory_bank/memory_augmented_agent_with_local_memory.ipynb`](memory_bank/memory_augmented_agent_with_local_memory.ipynb) | Memory-augmented agent with local memory implementation |
-| **MemoRizz** | [`part1/memorizz/memagent_single_agent.ipynb`](memorizz/memagent_single_agent.ipynb) | Single agent memory implementation with MemoRizz framework |
+| **Mem0** | [`part1/mem0/memory_augmented_agent_with_mem0_mongodb.ipynb`](part1/mem0/memory_augmented_agent_with_mem0_mongodb.ipynb) | Memory-augmented agent using Mem0 library with MongoDB |
+| **Memory Bank** | [`part1/memory_bank/memory_augmented_agent_with_local_memory.ipynb`](part1/memory_bank/memory_augmented_agent_with_local_memory.ipynb) | Memory-augmented agent with local memory implementation |
+| **MemoRizz** | [`part1/memorizz/memagent_single_agent.ipynb`](part1/memorizz/memagent_single_agent.ipynb) | Single agent memory implementation with MemoRizz framework |
 
 ## Purpose of This Repository
 
