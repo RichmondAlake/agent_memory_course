@@ -59,13 +59,13 @@ def setup_oracle_user():
     # Configuration - modify these as needed
     ADMIN_USER = "system"
     # ⚠️ IMPORTANT: For Docker containers, ADMIN_PASSWORD must match ORACLE_PWD from docker run command
-    # Example: docker run -e ORACLE_PWD=SecurePass123 ... → ADMIN_PASSWORD = "SecurePass123"
-    ADMIN_PASSWORD = "SecurePass123"  # Change to your admin password
+    # Example: docker run -e ORACLE_PWD=OraclePwd_2025 ... → ADMIN_PASSWORD = "OraclePwd_2025"
+    ADMIN_PASSWORD = "OraclePwd_2025"  # Change to your admin password
     DSN = "localhost:1521/FREEPDB1"  # Change if using different host/port/service
 
     # User to create
     MEMORIZZ_USER = "memorizz_user"
-    MEMORIZZ_PASSWORD = "SecurePass123!"  # Change to your desired password
+    MEMORIZZ_PASSWORD = "OraclePwd_2025!"  # Change to your desired password
 
     # SQL files - resolve paths relative to script location
     # The script is at: part2/memorizz/setup_oracle_user.py
