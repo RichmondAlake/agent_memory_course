@@ -1,0 +1,9 @@
+# Secrets — never commit
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# memorizz FileSystemProvider fallback store
+.memorizz_appbook/

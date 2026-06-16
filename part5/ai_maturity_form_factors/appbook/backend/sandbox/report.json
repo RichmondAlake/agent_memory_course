@@ -1,0 +1,32 @@
+{
+  "input": "support_messages.csv",
+  "total_messages": 7,
+  "by_category": [
+    {
+      "name": "billing",
+      "count": 3
+    },
+    {
+      "name": "account",
+      "count": 2
+    },
+    {
+      "name": "technical",
+      "count": 2
+    }
+  ],
+  "by_priority": [
+    {
+      "name": "medium",
+      "count": 3
+    },
+    {
+      "name": "high",
+      "count": 2
+    },
+    {
+      "name": "low",
+      "count": 2
+    }
+  ]
+}

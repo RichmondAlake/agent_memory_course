@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+ff5_sandbox/
+
+# Form Factor 5 app — saved automations + run snapshots (generated at runtime)
+part5/ai_maturity_form_factors/appbook/backend/automations/

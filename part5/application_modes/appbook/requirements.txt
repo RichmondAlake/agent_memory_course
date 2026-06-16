@@ -1,0 +1,15 @@
+# Backend for the Application Modes app.
+# The `oracle_demos` conda env already satisfies the memory + agent deps; the
+# web-server packages are the only additions.
+fastapi>=0.110
+uvicorn>=0.27
+sse-starlette>=2.0
+python-dotenv>=1.0
+
+# Memory + agents (already in the oracle_demos env from the notebooks).
+oracleagentmemory>=26.4      # Oracle AI Agent Memory — the star of the show
+oracledb>=3.4                # Oracle AI Database driver
+anthropic>=0.68              # all LLM work: modes + OAMP's extraction/summary helper
+fastembed>=0.8               # local open-source embeddings (nomic-embed-text-v1.5) — no OpenAI key
+tavily-python>=0.7           # web search for Deep Research (optional)
+numpy>=1.26

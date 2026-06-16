@@ -1,0 +1,8 @@
+id,category,priority,message
+1,billing,high,I was double charged for my Pro seats
+2,technical,high,API returns 500 on /v1/sync
+3,billing,low,How do I upgrade to Pro?
+4,account,medium,Need to add a teammate
+5,technical,medium,Webhooks are not firing
+6,billing,medium,Invoice VAT amount looks wrong
+7,account,low,Change the account owner

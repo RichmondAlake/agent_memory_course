@@ -1,0 +1,12 @@
+# Backend for the Agent Memory Stack app.
+# Powered by memorizz (the framework taught in the companion notebook).
+fastapi>=0.110
+uvicorn>=0.27
+sse-starlette>=2.0
+python-dotenv>=1.0
+
+# memorizz + the providers this app uses. The [oracle] extra pulls oracledb;
+# [filesystem] pulls faiss-cpu for the graceful in-memory fallback.
+memorizz[oracle,filesystem]>=0.0.49
+openai>=1.40                # LLM (gpt-4o-mini) + embeddings (text-embedding-3-small)
+oracledb>=3.0              # optional — memorizz falls back to FileSystemProvider if absent/unreachable
