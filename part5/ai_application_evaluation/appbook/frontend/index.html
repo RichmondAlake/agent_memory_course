@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Application Evaluation — Measuring Every Rung</title>
+  <meta name="description" content="Evaluate every rung of the AI maturity ladder — chatbot, RAG, workflow, agent, autonomous agent — with the right metric for each, on Oracle AI Database, judged by Claude, tracked in LangSmith." />
+
+  <!-- Set theme before paint to avoid a flash of the wrong theme. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("aieval-theme");
+        if (!t) t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="stage" id="stage" tabindex="-1"></main>
+  </div>
+  <button class="scrim" id="scrim" aria-label="Close menu" hidden></button>
+  <script src="/app.js"></script>
+</body>
+</html>

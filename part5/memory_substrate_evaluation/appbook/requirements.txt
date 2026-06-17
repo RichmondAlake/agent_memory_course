@@ -1,0 +1,10 @@
+# Backend for the Memory Substrate Evaluation app.
+# The `oracle_demos` conda env already satisfies all of these.
+fastapi>=0.110
+uvicorn>=0.27
+sse-starlette>=2.0
+python-dotenv>=1.0
+numpy>=1.26
+fastembed>=0.8            # torch-free ONNX embeddings (nomic, 768-dim) for the DB substrate
+oracledb>=3.0            # optional — the DB substrate falls back to in-memory if absent/unreachable
+anthropic>=0.68          # optional — only for the "answer from retrieved context" payoff

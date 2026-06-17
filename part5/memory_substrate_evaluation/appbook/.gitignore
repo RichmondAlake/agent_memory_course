@@ -1,0 +1,9 @@
+# Secrets
+.env
+
+# Filesystem-substrate + benchmark workspace (generated at runtime)
+backend/workspace/
+
+# Python
+__pycache__/
+*.pyc

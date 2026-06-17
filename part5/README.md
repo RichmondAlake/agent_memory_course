@@ -1,8 +1,8 @@
 # Part 5 — Agentic AI Applications on Oracle AI Database
 
-The "put it all together" part of the course. Part 5 contains **three self‑contained
-modules**, each teaching a different facet of building real agentic AI applications —
-and each shipped in **two surfaces**:
+The "put it all together" part of the course. Part 5 has two tracks of **self‑contained
+modules** — **build** modules that construct real agentic AI applications, and **evaluation**
+modules that measure them — each shipped in **two surfaces**:
 
 - a **📓 notebook** that builds every concept up from first principles, cell by cell, and
 - an **🚀 appbook** — a companion web app (FastAPI + dependency‑free vanilla JS, with
@@ -18,7 +18,7 @@ fallbacks** so each piece still runs if the database — or an API key — isn't
 
 ---
 
-## The three modules
+## Build modules
 
 | Module | Teaches | Notebook(s) | Built on |
 |---|---|---|---|
@@ -51,6 +51,26 @@ See [`application_modes/appbook/README.md`](application_modes/appbook/README.md)
 
 ---
 
+## Evaluation modules
+
+Building an agentic application is half the job; **knowing whether it works** is the other
+half. These three modules **measure** the systems the build modules construct — each, again,
+as a **📓 notebook** (derive the metrics from first principles) + a **🚀 appbook** (score them
+live in the browser).
+
+| Module | Measures | Notebook | Appbook |
+|---|---|---|---|
+| [`ai_application_evaluation/`](ai_application_evaluation/) | **Every rung of the ladder** — abstention, the RAG triad, a **BEIR** bake-off, agent trajectory, and autonomous‑agent functional correctness, in the LangSmith **dataset → target → evaluators → experiment** shape | `ai_application_evaluation_notebook.ipynb` | `8003` |
+| [`agent_memory_benchmarking_evaluation/`](agent_memory_benchmarking_evaluation/) | **OAMP vs naive memory** — token consumption, latency, LLM‑judged quality, and prompt caching; the "pick any two" trade‑off | `oracle_agent_memory_benchmarks.ipynb` | `8004` |
+| [`memory_substrate_evaluation/`](memory_substrate_evaluation/) | **Filesystem vs Oracle AI Database** as a memory substrate — write latency, keyword vs semantic retrieval, and concurrency / ACID safety | `memory_substrate_evaluation.ipynb` | `8004`¹ |
+
+Each evaluation module has its own `README.md` (linked above) with the full metric catalog.
+
+> ¹ `memory_substrate_evaluation` and `agent_memory_benchmarking_evaluation` both default to
+> `8004` — set `PORT=8005` on one of them to run both at once.
+
+---
+
 ## Directory layout
 
 ```
@@ -65,11 +85,16 @@ part5/
 ├── agent_memory/
 │   ├── agent_memory_zero_to_hero.ipynb
 │   └── appbook/                       FastAPI + JS app (5 memory-layer pages)
-└── application_modes/
-    ├── assistant_supply_chain_claude_agent_sdk.ipynb
-    ├── workflow_mortgage_langgraph.ipynb
-    ├── deep_research_openai_agents.ipynb
-    └── appbook/                       FastAPI + JS app (3 mode pages)
+├── application_modes/
+│   ├── assistant_supply_chain_claude_agent_sdk.ipynb
+│   ├── workflow_mortgage_langgraph.ipynb
+│   ├── deep_research_openai_agents.ipynb
+│   └── appbook/                       FastAPI + JS app (3 mode pages)
+│
+│   # ── evaluation modules (measure the build modules above) ──
+├── ai_application_evaluation/            README · notebook · appbook  (scores all 5 form factors)
+├── agent_memory_benchmarking_evaluation/ README · notebook · appbook  (OAMP vs naive memory)
+└── memory_substrate_evaluation/         README · notebook · appbook  (filesystem vs Oracle DB)
 ```
 
 Each `appbook/` follows the same shape: `backend/` (FastAPI — `main.py`, `config.py`,
@@ -119,6 +144,9 @@ below) so you can still run the notebooks and apps.
 | `ai_maturity_form_factors` | `dbtlabs` | `ANTHROPIC_API_KEY` | in‑memory NumPy vector index |
 | `agent_memory` | `oracle_demos` | `OPENAI_API_KEY` | memorizz **FileSystem/FAISS** provider |
 | `application_modes` | `oracle_demos` | `ANTHROPIC_API_KEY` (+ `TAVILY_API_KEY` for Deep Research web search) | in‑process keyword memory store |
+| `ai_application_evaluation` | `oracle_demos` | `ANTHROPIC_API_KEY` (+ optional `LANGSMITH_API_KEY`) | in‑memory NumPy vector index |
+| `agent_memory_benchmarking_evaluation` | `oracle_demos` | `ANTHROPIC_API_KEY` | OAMP stops need Oracle; the naive stop runs without it |
+| `memory_substrate_evaluation` | `oracle_demos` | `ANTHROPIC_API_KEY` (optional — only the Step 3 payoff) | in‑memory NumPy retrieval + SQLite for the ACID race |
 
 Notes:
 - **Models:** the ladder and application‑modes work runs on **`claude-opus-4-8`** with
@@ -132,9 +160,11 @@ Notes:
 
 ## Important details
 
-- **Ports.** Every appbook serves on **`http://127.0.0.1:8000`** by default. To run more
-  than one at once, set `PORT` — e.g. ai_maturity on `8001`, agent_memory on `8002`,
-  application_modes on `8003`. Hot reload during development: `PORT=8001 ./run.sh --reload`.
+- **Ports.** Every appbook serves on **`http://127.0.0.1:8000`** by default. To run more than
+  one at once, set `PORT` — a convenient scheme: `8001` ai_maturity · `8002` agent_memory ·
+  `8003` ai_application_evaluation · `8004` memory_substrate_evaluation · `8005`
+  agent_memory_benchmarking_evaluation (run application_modes on any other free port). Hot
+  reload during development: `PORT=8001 ./run.sh --reload`.
 - **`.env` resolution.** Appbooks load, in order, `part5/.env` → `<module>/.env` →
   `appbook/.env` (later wins). Put a shared key once in `part5/.env`, or override per app.
 - **`.env` files are gitignored** (along with generated artifacts: `ff5_sandbox/`, the

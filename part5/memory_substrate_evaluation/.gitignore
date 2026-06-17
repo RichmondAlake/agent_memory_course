@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Notebook-generated agent memory + benchmark artifacts
+semantic/
+episodic/
+*.png
+.ipynb_checkpoints/
+__pycache__/
+_executed.ipynb
+
+# fastembed model cache (if downloaded locally)
+.fastembed_cache/
+
+# Third-party reference papers — cite by URL, don't redistribute
+*.pdf

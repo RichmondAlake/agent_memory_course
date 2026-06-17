@@ -1,0 +1,11 @@
+# Agent Memory Benchmarks app — Python deps (all present in the `oracle_demos` env).
+fastapi>=0.110
+uvicorn[standard]
+sse-starlette
+python-dotenv
+anthropic>=0.40
+oracleagentmemory>=26.4
+litellm
+fastembed
+oracledb
+numpy

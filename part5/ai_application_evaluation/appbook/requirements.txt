@@ -1,0 +1,14 @@
+# Backend for the AI Application Evaluation app.
+# The `oracle_demos` conda env already satisfies all of these.
+fastapi>=0.110
+uvicorn>=0.27
+sse-starlette>=2.0
+python-dotenv>=1.0
+anthropic>=0.68            # the system under test AND the LLM-as-judge
+numpy>=1.26
+pandas>=2.0
+fastembed>=0.8            # torch-free ONNX embeddings (nomic, 768-dim) for retrieval
+oracledb>=3.0            # optional — retrieval falls back to in-memory if absent/unreachable
+claude-agent-sdk>=0.2     # FF4 agent + FF5 autonomous agent (also needs the `claude` CLI on PATH)
+datasets>=2.18            # BEIR scifact queries + qrels (the corpus/vectors come from the seed .npz)
+langsmith>=0.4            # optional — uploads each evaluation as a versioned experiment

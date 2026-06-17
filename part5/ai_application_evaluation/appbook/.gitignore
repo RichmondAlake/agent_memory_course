@@ -1,0 +1,4 @@
+.env
+backend/sandbox/
+__pycache__/
+*.pyc
