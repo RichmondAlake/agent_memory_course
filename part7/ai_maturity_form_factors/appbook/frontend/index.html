@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-sidebar="collapsed">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The AI Maturity Ladder — Acme Home Loans</title>
+  <meta name="description" content="Five AI form factors on one mortgage application: chatbot, RAG on Oracle AI Database, a workflow with the Clef decision model, an agent with session memory, and an autonomous agent." />
+
+  <!-- Set theme and desktop navigation width before paint to avoid layout flashes. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("aiml-theme");
+        if (!t) t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", t);
+        var s = localStorage.getItem("aiml-sidebar");
+        document.documentElement.setAttribute("data-sidebar", s === "expanded" ? "expanded" : "collapsed");
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="stage" id="stage" tabindex="-1"></main>
+  </div>
+  <button class="scrim" id="scrim" aria-label="Close menu" hidden></button>
+  <section class="data-explorer" id="data-explorer" aria-label="Database explorer">
+    <div class="explorer-resizer" id="explorer-resizer" role="separator" aria-orientation="horizontal" aria-label="Resize data explorer" title="Drag to resize the Data Explorer"><i></i></div>
+    <button class="explorer-handle" id="explorer-toggle" aria-expanded="false" aria-controls="explorer-body">
+      <span class="explorer-title"><i class="db-glyph">DB</i><strong>Data Explorer</strong><span id="explorer-summary">Connecting to the application database…</span></span>
+      <span class="explorer-live"><i class="explorer-status-dot"></i><span id="explorer-live-label">Live transactions</span></span>
+      <span class="explorer-chevron" aria-hidden="true">⌃</span>
+    </button>
+    <div class="explorer-body" id="explorer-body" hidden>
+      <aside class="explorer-tables">
+        <div class="explorer-section-head"><span>Database tables</span><button id="explorer-refresh" title="Refresh table catalogue">↻</button></div>
+        <label class="explorer-search"><span class="sr-only">Filter tables</span><input id="explorer-filter" placeholder="Filter tables…" /></label>
+        <div class="explorer-table-list" id="explorer-table-list"></div>
+      </aside>
+      <section class="explorer-data">
+        <div class="explorer-toolbar">
+          <div><span class="explorer-eyebrow" id="explorer-layer">SELECT A TABLE</span><h2 id="explorer-table-name">Application database</h2></div>
+          <div class="explorer-pagination"><button id="explorer-prev" aria-label="Previous page">←</button><span id="explorer-page">—</span><button id="explorer-next" aria-label="Next page">→</button></div>
+        </div>
+        <div class="explorer-grid-wrap" id="explorer-grid"><div class="explorer-empty">Choose a table to inspect its real columns and rows.</div></div>
+      </section>
+      <aside class="explorer-activity">
+        <div class="explorer-section-head"><span>Transaction activity</span><span class="explorer-live-word">LIVE</span></div>
+        <div class="explorer-activity-list" id="explorer-activity-list"></div>
+      </aside>
+    </div>
+  </section>
+
+  <script src="/app.js"></script>
+  <script src="/rag.js"></script>
+  <script src="/hnsw.js"></script>
+  <script src="/workflow.js"></script>
+  <script src="/agent.js"></script>
+  <script src="/builder.js"></script>
+</body>
+</html>

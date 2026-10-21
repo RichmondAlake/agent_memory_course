@@ -1,0 +1,17 @@
+# Dependencies live in environment.yml (repo2docker's conda buildpack). Kept for tools that read this file.
+anthropic>=1.0
+oracledb>=3.4
+fastembed>=0.8
+pandas>=2.0
+numpy>=1.26
+matplotlib>=3.8
+claude-agent-sdk>=0.2.168
+nest-asyncio>=1.6
+python-dotenv>=1.0
+requests>=2.31
+huggingface_hub>=0.30
+torch>=2.6
+transformers>=5.10.2
+accelerate>=1.0
+bitsandbytes>=0.45
+pillow>=10.0

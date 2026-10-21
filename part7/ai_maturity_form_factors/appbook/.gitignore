@@ -1,0 +1,15 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated autonomous-agent state (sandbox runs + saved automations)
+backend/automations/
+backend/sandbox/
+backend/agent_home/
+
+# Browser-check screenshots
+tests/artifacts/

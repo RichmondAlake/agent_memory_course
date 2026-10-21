@@ -1,0 +1,11 @@
+# One environment for every Part 7 notebook and appbook.
+#   uv venv --python 3.12 .venv
+#   uv pip install --python .venv/bin/python -r requirements.txt
+#   .venv/bin/python -m playwright install chromium     # only for the browser checks
+-r ai_maturity_form_factors/appbook/requirements.txt
+-r agent_memory/zero_to_hero/appbook/requirements.txt
+
+# Notebooks and the notebook runner (tests/run_notebooks.py)
+jupyter>=1.0
+nbclient>=0.10
+ipykernel>=6.29

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-sidebar="collapsed">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Memo, Scratch to MemoRizz</title>
+  <meta name="description" content="Every agent memory unit built twice on Oracle AI Database: from scratch with SQL, and with MemoRizz, side by side." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2313151b'/%3E%3Cpath d='M6 11l10-6 10 6-10 6zM6 16l10 6 10-6M6 21l10 6 10-6' fill='none' stroke='%238b5cf6' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E" />
+
+  <!-- Set theme and desktop navigation width before paint to avoid layout flashes. -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("zth-theme");
+        if (!t) t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", t);
+        var s = localStorage.getItem("zth-sidebar");
+        document.documentElement.setAttribute("data-sidebar", s === "expanded" ? "expanded" : "collapsed");
+        if (localStorage.getItem("zth-unit-view") === "row") document.documentElement.setAttribute("data-unitview", "row");
+        var c = localStorage.getItem("zth-ctxrail");
+        document.documentElement.setAttribute("data-ctxrail", c === "collapsed" ? "collapsed" : "expanded");
+      } catch (e) {}
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app" class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+    <main class="stage" id="stage" tabindex="-1"></main>
+    <aside class="ctxrail" id="ctxrail-shell" aria-label="Model context">
+      <button class="ctxrail-toggle" id="ctxrail-toggle" type="button" aria-controls="ctxrail"></button>
+      <button class="ctxrail-mini" id="ctxrail-mini" type="button" aria-label="Expand the model context panel" title="Expand the model context panel"></button>
+      <div class="ctxrail-body" id="ctxrail"></div>
+    </aside>
+  </div>
+  <button class="scrim" id="scrim" aria-label="Close menu" hidden></button>
+  <section class="data-explorer" id="data-explorer" aria-label="Database explorer">
+    <div class="explorer-resizer" id="explorer-resizer" role="separator" aria-orientation="horizontal" aria-label="Resize data explorer" title="Drag to resize the Data Explorer"><i></i></div>
+    <button class="explorer-handle" id="explorer-toggle" aria-expanded="false" aria-controls="explorer-body">
+      <span class="explorer-title"><i class="db-glyph">DB</i><strong>Data Explorer</strong><span id="explorer-summary">Connecting to the application database…</span></span>
+      <span class="explorer-live"><i class="explorer-status-dot"></i><span id="explorer-live-label">Live transactions</span></span>
+      <span class="explorer-chevron" aria-hidden="true">⌃</span>
+    </button>
+    <div class="explorer-body" id="explorer-body" hidden>
+      <aside class="explorer-tables">
+        <div class="explorer-section-head"><span>Database tables</span><button id="explorer-refresh" title="Refresh table catalogue">↻</button></div>
+        <label class="explorer-search"><span class="sr-only">Filter tables</span><input id="explorer-filter" placeholder="Filter tables…" /></label>
+        <div class="explorer-table-list" id="explorer-table-list"></div>
+      </aside>
+      <section class="explorer-data">
+        <div class="explorer-toolbar">
+          <div><span class="explorer-eyebrow" id="explorer-layer">SELECT A TABLE</span><h2 id="explorer-table-name">Application database</h2></div>
+          <div class="explorer-pagination"><button id="explorer-scope" class="explorer-scope active" title="Show only this lab session's rows, or every row in the schema">This run</button><button id="explorer-prev" aria-label="Previous page">←</button><span id="explorer-page">—</span><button id="explorer-next" aria-label="Next page">→</button></div>
+        </div>
+        <div class="explorer-grid-wrap" id="explorer-grid"><div class="explorer-empty">Choose a table to inspect its real columns and rows.</div></div>
+      </section>
+      <aside class="explorer-activity">
+        <div class="explorer-section-head"><span>Transaction activity</span><span class="explorer-live-word">LIVE</span></div>
+        <div class="explorer-activity-list" id="explorer-activity-list"></div>
+      </aside>
+    </div>
+  </section>
+
+  <script src="/units.js"></script>
+  <script src="/tokenomics.js"></script>
+  <script src="/context.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
