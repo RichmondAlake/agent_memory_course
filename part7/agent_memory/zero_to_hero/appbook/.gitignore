@@ -1,0 +1,10 @@
+# Secrets — never commit
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Browser-check screenshots
+tests/artifacts/

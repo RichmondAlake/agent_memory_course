@@ -7,3 +7,6 @@ ff5_sandbox/
 
 # Form Factor 5 app — saved automations + run snapshots (generated at runtime)
 part5/ai_maturity_form_factors/appbook/backend/automations/
+
+# Part 7 local Python environment
+part7/.venv/

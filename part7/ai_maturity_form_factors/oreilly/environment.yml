@@ -1,0 +1,25 @@
+name: richmond-alake
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      # The AI Maturity Ladder notebook: Claude, Oracle AI Database, embeddings, the agent SDK
+      - anthropic>=1.0
+      - oracledb>=3.4
+      - fastembed>=0.8
+      - pandas>=2.0
+      - numpy>=1.26
+      - matplotlib>=3.8
+      - claude-agent-sdk>=0.2.168
+      - nest-asyncio>=1.6
+      - python-dotenv>=1.0
+      - requests>=2.31
+      - huggingface_hub>=0.30
+      # Clef-Flash, the decision model in Part 3, on the NVIDIA GPU (4-bit with bitsandbytes)
+      - torch>=2.6
+      - transformers>=5.10.2
+      - accelerate>=1.0
+      - bitsandbytes>=0.45
+      - pillow>=10.0

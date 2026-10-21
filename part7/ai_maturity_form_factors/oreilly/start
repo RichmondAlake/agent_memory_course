@@ -1,0 +1,12 @@
+#!/bin/bash
+# Runs when the notebook server starts. Models were baked into the image by postBuild.
+export FASTEMBED_CACHE_PATH="$HOME/.cache/fastembed"
+export HF_HUB_DISABLE_XET=1
+
+# Oracle Database Free, built into this image, starts in the background (about 10 seconds);
+# the notebook's connection cell waits for it, and starts it itself if needed.
+if [ -f "$HOME/.oracle-free/oracle_free.py" ]; then
+  nohup python "$HOME/.oracle-free/oracle_free.py" start > "$HOME/.oracle-free/start.log" 2>&1 &
+fi
+
+exec "$@"

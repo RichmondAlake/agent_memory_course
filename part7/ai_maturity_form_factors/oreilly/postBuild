@@ -1,0 +1,51 @@
+#!/srv/conda/envs/notebook/bin/python
+
+# Build-time preparation, so learners never wait for it: Oracle Database Free in user space, and the models.
+
+import os
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+HOME = Path.home()
+CLEF_REPO = "Cloudflare/clef-flash"
+CLEF_REVISION = "f0b7d3cd65296abfe459e6c228b618f5d8b26d2f"  # pinned; matches the notebook's §3.3
+
+started = time.time()
+
+# 1. Oracle Database Free (gvenzl/oracle-free:23), relocated under ~/.oracle-free and provisioned like
+#    part7/oracle.sh: service FREEPDB1 on localhost:1521, user VECTOR. The `start` script starts it at launch.
+subprocess.check_call([sys.executable, "oracle_free.py", "install"])
+shutil.copy("oracle_free.py", HOME / ".oracle-free" / "oracle_free.py")
+
+# 2. Models. Hugging Face's Xet transport can stall, so download over plain HTTPS.
+os.environ["HF_HUB_DISABLE_XET"] = "1"
+os.environ["FASTEMBED_CACHE_PATH"] = str(HOME / ".cache" / "fastembed")
+from huggingface_hub import snapshot_download  # noqa: E402
+
+snapshot_download(CLEF_REPO, revision=CLEF_REVISION, ignore_patterns=[".eval_results/*"], max_workers=8)
+from fastembed import TextEmbedding  # noqa: E402
+from fastembed.rerank.cross_encoder import TextCrossEncoder  # noqa: E402
+
+TextEmbedding(model_name="nomic-ai/nomic-embed-text-v1.5")
+TextCrossEncoder(model_name="BAAI/bge-reranker-v2-m3-int8")
+print(f"postBuild finished in {time.time() - started:.0f}s", flush=True)
+
+# When we are all finished, clean up the directory. Anything left behind
+# will be sitting in the base directory of the notebook.
+for fn in [
+    "apt.txt",
+    "build_create_response.json",
+    "build_params.json",
+    "environment.yml",
+    "oracle_free.py",
+    "oreilly.toml",
+    "postBuild",
+    "profile_map.json",
+    "runtime.txt",
+    "requirements.txt",
+]:
+    if os.path.exists(fn):
+        os.remove(fn)
