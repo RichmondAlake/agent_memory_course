@@ -128,6 +128,7 @@ def _options(context: RunContext, session_id: str | None):
                        "mcp__ops__run_automation"],
         mcp_servers={"ops": _ops_tools()},
         permission_mode="bypassPermissions",
+        disallowed_tools=["Skill"],   # only the tools above: no skills installed on this machine
         hooks={"PreToolUse": [HookMatcher(matcher=sandbox.FILE_TOOLS + "|Bash", hooks=[_guard(context)])]},
         sandbox=sandbox.BASH_SANDBOX,
         max_turns=30,

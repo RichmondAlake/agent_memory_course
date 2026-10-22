@@ -28,7 +28,7 @@ install_requirements() {
   "$PY" -m pip install -q -r requirements.txt 2>/dev/null \
     || uv pip install -q --python "$PY" -r requirements.txt
 }
-"$PY" -c "import anthropic, fastapi, uvicorn, fastembed, oracledb, sse_starlette, claude_agent_sdk, dotenv, huggingface_hub, matplotlib, pandas" 2>/dev/null \
+"$PY" -c "import anthropic, fastapi, uvicorn, fastembed, oracledb, sse_starlette, claude_agent_sdk, dotenv, huggingface_hub, matplotlib, pandas, arize.otel, openinference.instrumentation.claude_agent_sdk" 2>/dev/null \
   || install_requirements
 
 HOST="${HOST:-127.0.0.1}"

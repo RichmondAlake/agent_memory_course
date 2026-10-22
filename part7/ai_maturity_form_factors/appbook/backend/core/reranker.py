@@ -9,6 +9,8 @@ from __future__ import annotations
 import threading
 import time
 
+from backend.core.tracing import documents, traced
+
 MODEL = "BAAI/bge-reranker-v2-m3-int8"
 CANDIDATES = 8
 _lock = threading.Lock()
@@ -33,11 +35,16 @@ def status() -> dict:
 def rerank(query: str, hits: list, k: int) -> dict:
     """Score every (query, section) pair; return the hits best first, cut to k, with each one's move."""
     model = _model()
-    started = time.perf_counter()
-    with _lock:
-        scores = [float(s) for s in model.rerank(query, [f"{h.title}. {h.content}" for h in hits])]
-    ms = round((time.perf_counter() - started) * 1000)
-    order = sorted(range(len(hits)), key=lambda i: -scores[i])
-    rows = [{"doc_id": hits[i].doc_id, "title": hits[i].title, "before": i + 1, "after": new + 1,
-             "score": round(scores[i], 3)} for new, i in enumerate(order)]
+    with traced("rerank", "RERANKER", **{"reranker.query": query, "reranker.model_name": MODEL, "reranker.top_k": k}) as span:
+        started = time.perf_counter()
+        with _lock:
+            scores = [float(s) for s in model.rerank(query, [f"{h.title}. {h.content}" for h in hits])]
+        ms = round((time.perf_counter() - started) * 1000)
+        order = sorted(range(len(hits)), key=lambda i: -scores[i])
+        rows = [{"doc_id": hits[i].doc_id, "title": hits[i].title, "before": i + 1, "after": new + 1,
+                 "score": round(scores[i], 3)} for new, i in enumerate(order)]
+        if span:
+            span.set_attributes({**documents("reranker.input_documents", [h.doc_id for h in hits], [h.content for h in hits]),
+                                 **documents("reranker.output_documents", [hits[i].doc_id for i in order[:k]],
+                                             [hits[i].content for i in order[:k]], [scores[i] for i in order[:k]])})
     return {"hits": [hits[i] for i in order[:k]], "rows": rows, "ms": ms, "model": MODEL}

@@ -263,6 +263,7 @@ function statusInner() {
   const dmDot = dm.status === "ready" || dm.status === "remote" ? "ok" : dm.status === "error" ? "off" : dm.status === "loading" ? "warn pulse" : "off";
   return `
     <div class="status-row"><span class="k">Model</span><span class="mono" style="color:var(--text)">${esc(h.model)}</span></div>
+    ${h.provider === "ollama" ? `<div class="status-row"><span class="k">Runs on</span><span class="dot ${({ ready: "ok", error: "off" })[h.open_models?.status] || "warn pulse"}"></span><span title="${esc(h.open_models?.error || "")}">${h.open_models?.status === "error" ? "Ollama unreachable" : h.open_models?.status === "ready" ? "Ollama · open model" : "preparing Gemma 4…"}</span></div>` : ""}
     <div class="status-row"><span class="k">Memory</span><span class="dot ${rb.ready ? "ok" : rb.backend === "unavailable" ? "off" : "warn pulse"}"></span><span>${db}</span></div>
     <div class="status-row"><span class="k">Decision</span><span class="dot ${dmDot}"></span><span>${dmText}</span></div>
     <div class="status-row"><span class="k">Agents</span><span class="dot ${h.agent_available ? "ok" : "off"}"></span><span>${h.agent_available ? "ready" : "CLI not found"}</span></div>`;

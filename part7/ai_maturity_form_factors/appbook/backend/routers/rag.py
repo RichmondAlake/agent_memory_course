@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 
 from backend.core import db, hnsw_lab, reranker, retrieval, underwriting
-from backend.core.anthropic_client import MAX_TOKENS, MODEL, OUTPUT_CONFIG, async_client
+from backend.core.anthropic_client import MAX_TOKENS, MODEL, OUTPUT_CONFIG, THINKING, async_client
 from backend.core.policy import BULLETINS, CATEGORIES
 from backend.core.sse import sse_response
 from backend.schemas import HnswQueryRequest, PolicyBulletinRequest, PolicyUpdateRequest, RagRequest, SpaceRequest
@@ -81,7 +81,7 @@ async def answer(req: RagRequest):
             hits = await run_in_threadpool(retrieval.search, req.query, req.technique, req.k)
         yield {"type": "sources", "technique": req.technique + (" → rerank" if req.rerank else ""), "hits": [h.as_dict() for h in hits]}
         context = retrieval.context_block([h.as_dict() for h in hits])
-        async with async_client.messages.stream(model=MODEL, max_tokens=MAX_TOKENS, output_config=OUTPUT_CONFIG,
+        async with async_client.messages.stream(model=MODEL, max_tokens=MAX_TOKENS, output_config=OUTPUT_CONFIG, **THINKING,
                                                 system=f"{RAG_SYSTEM}\n\nPolicy context:\n{context}",
                                                 messages=[{"role": "user", "content": req.query}]) as stream:
             async for text in stream.text_stream:

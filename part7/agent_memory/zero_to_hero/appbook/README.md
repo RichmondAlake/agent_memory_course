@@ -8,8 +8,8 @@ builds side by side so you can poke at them.
 
 Every page is one Part of the notebook. You send **one message to both
 agents**, each built up to that Part: Memo from scratch (the notebook's layers,
-your `SCRATCH_*` tables) and Memo with MemoRizz 0.17.4 (the same
-`MemAgentBuilder` calls). Both run on gpt-5.5 and the `MEMORIZZ` schema of
+your `SCRATCH_*` tables) and Memo with MemoRizz 0.17.8 (the same
+`MemAgentBuilder` calls). Both run on gpt-5.5 (or on Gemma 4 through Ollama, with no key) and the `MEMORIZZ` schema of
 Oracle AI Database. Each page shows both answers with time, tokens and tool
 calls, your table (with its DDL) next to MemoRizz's table (with its columns),
 this session's rows, and the Part's own actions. The right-hand **Model
@@ -122,9 +122,11 @@ Section token counts are tiktoken estimates. Writing a snapshot takes about
 Pages build on each other as the notebook does: the first time a page needs
 an earlier Part's setup (persona v1, the runbook, the tools, the authored
 skill), it runs it once. One **lab session** holds everything, scoped to
-`memo-app-<run>` / `ada-app-<run>`. **Reset session** on the overview deletes
-the session's rows with exact-scope deletes (your tables and MemoRizz's); the
-server does the same on shutdown unless `MEMO_CLEANUP_ON_RESET=0`.
+`memo-app-<run>` / `ada-app-<run>`. **Reset session** on the overview starts a
+new session and keeps the old one's rows, so every session's MemoRizz traces
+appear in the MemoRizz UI (Traces, filtered by agent). Set `MEMO_CLEANUP=1` to
+delete a session's rows with exact-scope deletes (your tables and MemoRizz's) on
+reset, on shutdown and after a Tokenomics run.
 
 The **Data Explorer** at the bottom of every page lists your `SCRATCH_*`
 tables next to MemoRizz's tables, limited to this session or across the
@@ -135,19 +137,25 @@ accepts no SQL.
 
 ```bash
 ../../../oracle.sh start          # from this folder: the shared Oracle container on 1521
-cp .env.example .env              # add OPENAI_API_KEY (and TYPESAFE_API_KEY for Part 15)
+cp .env.example .env              # add OPENAI_API_KEY (and TYPESAFE_API_KEY for Part 15), or leave it empty for open models
 ./run.sh                          # → http://127.0.0.1:8710
 ```
 
 `run.sh` uses `$PYTHON` if set, otherwise `part7/.venv/bin/python` when it
 exists, otherwise `python3`, and installs `requirements.txt` when MemoRizz
-is older than 0.17.4, or FastAPI, the SSE package, `oracledb`, `tiktoken` or
+is older than 0.17.8, or FastAPI, the SSE package, `oracledb`, `tiktoken` or
 `requests` is missing. `HOST` and `PORT` override the address.
 
 ## Requirements and failure behaviour
 
-- **`OPENAI_API_KEY`** — required: gpt-5.5 (Responses API, reasoning effort
-  `none`) and `text-embedding-3-small` at 256 dimensions, as in the notebook.
+- **`OPENAI_API_KEY`**, or **open models** — with the key: gpt-5.5 (Responses
+  API, reasoning effort `none`) and `text-embedding-3-small` at 256 dimensions,
+  as in the notebook. Without it (or with `MEMO_PROVIDER=ollama`): Gemma 4 and
+  `nomic-embed-text` through [Ollama](https://ollama.com) on this machine, at no
+  API cost. On first start the appbook pulls both models and creates
+  `gemma4-32k` (a 32k-token context window); the status card shows which models
+  are in use, and Tokenomics prices local turns at $0. `MEMO_OPEN_MODEL` and
+  `OLLAMA_URL` pick another Gemma or another Ollama host.
 - **Oracle AI Database** — required: the `MEMORIZZ` schema from
   `part7/oracle.sh`. There is no fallback store; without it `/api/health`
   and every page report a clear error.
@@ -157,6 +165,13 @@ is older than 0.17.4, or FastAPI, the SSE package, `oracledb`, `tiktoken` or
 
 Keys are read from the environment or the ignored `.env`; they are never sent
 to the browser.
+
+## Tracing to Arize AX
+
+Set `ARIZE_SPACE_ID` and `ARIZE_API_KEY` (in the environment, `~/.ppa_workshop/keys.env` or `.env`), and every OpenAI call
+of both agents and MemoRizz is traced to the Arize AX project `agent-memory-zero-to-hero-appbook` (`ARIZE_PROJECT_NAME`
+overrides it). Manual spans add each scratch memory unit's `read()` (a RETRIEVER span listing what it added to the prompt)
+and the Jev routing request over SystemOne. Without the keys tracing is off; `/api/health` reports `tracing`.
 
 ## Tests
 

@@ -1,0 +1,17 @@
+# Backend for the retrieval benchmark appbook. Pins are lower bounds — newer is fine.
+fastapi>=0.110
+uvicorn>=0.27
+sse-starlette>=2.0
+python-dotenv>=1.0
+numpy>=1.26
+oracledb>=3.4              # Oracle AI Database: the notebook's stored run, read-only
+fastembed>=0.8             # bge-small-en-v1.5 and the ms-marco cross-encoder (ONNX on the CPU) for single queries
+huggingface_hub>=0.30      # pinned model revisions
+arize-otel>=0.14           # optional tracing to Arize AX (off without ARIZE_SPACE_ID and ARIZE_API_KEY)
+opentelemetry-sdk>=1.45
+
+# Tests (tests/): offline contracts, live API checks, browser checks.
+# After installing, run `python -m playwright install chromium` once.
+pytest>=8.0
+httpx>=0.27
+playwright>=1.48

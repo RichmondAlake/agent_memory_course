@@ -57,13 +57,39 @@ def _find_claude_cli() -> str | None:
     return str(fallback) if fallback.exists() else None
 
 
+def resolve_models(env: dict) -> dict:
+    """Claude with a key, or Gemma 4 through Ollama (AIML_PROVIDER=ollama, or no Anthropic key at all).
+
+    Ollama serves the Anthropic Messages API too, so the open path changes only the base URL and the model name,
+    for the anthropic SDK and for the Claude Code runtime behind the agents.
+    """
+    provider = (env.get("AIML_PROVIDER") or ("anthropic" if env.get("ANTHROPIC_API_KEY") else "ollama")).strip().lower()
+    if provider == "ollama":
+        url = (env.get("OLLAMA_URL") or "http://localhost:11434").rstrip("/")
+        base = env.get("AIML_OPEN_MODEL") or "gemma4"                      # Gemma 4 E4B
+        return {"provider": "ollama", "ollama_url": url, "open_model": base, "anthropic_api_key": "ollama",
+                "anthropic_base_url": url, "model": f"{base.replace(':', '-')}-32k"}  # the same weights, a 32k context
+    return {"provider": "anthropic", "ollama_url": None, "open_model": None,
+            "anthropic_api_key": env.get("ANTHROPIC_API_KEY"), "anthropic_base_url": None,
+            "model": env.get("AIML_MODEL", "claude-haiku-5-5")}
+
+
+_models = resolve_models(dict(os.environ))
+
+
 class Settings:
     """Immutable-ish runtime settings, read once at import."""
 
     # Anthropic / model — one model string used everywhere, mirroring the notebook: Claude Haiku 5.5,
     # the latest and lowest-cost Claude model. It thinks before answering; EFFORT keeps that short.
-    anthropic_api_key: str | None = os.environ.get("ANTHROPIC_API_KEY")
-    model: str = os.environ.get("AIML_MODEL", "claude-haiku-5-5")
+    # Or Gemma 4 on this machine through Ollama: no key, no API cost (AIML_PROVIDER=ollama, or no key).
+    provider: str = _models["provider"]
+    open: bool = provider == "ollama"
+    ollama_url: str | None = _models["ollama_url"]
+    open_model: str | None = _models["open_model"]          # the Ollama model the 32k-context variant is made from
+    anthropic_api_key: str | None = _models["anthropic_api_key"]
+    anthropic_base_url: str | None = _models["anthropic_base_url"]
+    model: str = _models["model"]
     max_tokens: int = int(os.environ.get("AIML_MAX_TOKENS", "2048"))
     effort: str = os.environ.get("AIML_EFFORT", "low")
 

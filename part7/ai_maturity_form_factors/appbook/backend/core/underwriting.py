@@ -17,6 +17,7 @@ from backend.config import settings
 from backend.core import db
 from backend.core.anthropic_client import ask, structured_json
 from backend.core.policy import plain
+from backend.core.tracing import as_json, llm_usage, traced
 
 DOCUMENT_TYPES = ["photo ID", "two pay stubs", "two years of W-2s", "two years of tax returns", "two bank statements"]
 REQUIRED_DOCUMENTS = ["photo ID", "two pay stubs", "two years of W-2s", "two bank statements"]
@@ -228,15 +229,22 @@ def clef_busy() -> bool:
 
 
 def systemone(request: dict) -> dict:
-    if settings.clef_url:
-        import requests
+    with traced("clef-flash", "LLM", **{"llm.model_name": clef_id(), "llm.provider": "local", "input.value": as_json(request),
+                                        "input.mime_type": "application/json"}) as span:
+        if settings.clef_url:
+            import requests
 
-        response = requests.post(f"{settings.clef_url}/v1/systemone", json=request, timeout=180)
-        response.raise_for_status()
-        return response.json()
-    model = load_clef()
-    with _clef_run_lock:
-        return model.systemone(request)
+            response = requests.post(f"{settings.clef_url}/v1/systemone", json=request, timeout=180)
+            response.raise_for_status()
+            reply = response.json()
+        else:
+            model = load_clef()
+            with _clef_run_lock:
+                reply = model.systemone(request)
+        if span:
+            span.set_attributes({"output.value": as_json(reply.get("answers")), "output.mime_type": "application/json",
+                                 **llm_usage(reply.get("usage"))})
+    return reply
 
 
 def decision_state(app: dict, ratios: dict, rules: dict, policy_text: list[str]) -> dict:

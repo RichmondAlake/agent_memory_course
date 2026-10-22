@@ -10,6 +10,12 @@ fastembed>=0.8             # torch-free ONNX embeddings for RAG
 oracledb>=3.4              # Oracle AI Database: policy memory, decisions, sessions (required)
 claude-agent-sdk>=0.2.168  # Form Factors 4-5: sessions + SessionStore (the wheel bundles its own `claude` CLI)
 
+# Optional tracing to Arize AX: on when ARIZE_SPACE_ID and ARIZE_API_KEY are set.
+arize-otel>=0.14
+opentelemetry-sdk>=1.45
+openinference-instrumentation-anthropic>=3.0
+openinference-instrumentation-claude-agent-sdk>=0.1.21
+
 # Form Factor 3's decision model, Clef-Flash (Apache-2.0), on Apple silicon via MLX.
 # Elsewhere, point CLEF_URL at a SystemOne endpoint instead.
 huggingface_hub>=0.30

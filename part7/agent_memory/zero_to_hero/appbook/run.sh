@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Launch the Agent Memory zero-to-hero appbook.
 #   Python: $PYTHON if set, else part7/.venv/bin/python if it exists, else python3.
-#   Installs requirements.txt when MemoRizz is older than 0.17.4, or FastAPI, SSE support or tiktoken is missing.
+#   Installs requirements.txt when MemoRizz is older than 0.17.8, or FastAPI, SSE support or tiktoken is missing.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -15,7 +15,7 @@ else
   PY="python3"
 fi
 
-"$PY" -c 'from importlib.metadata import version; import fastapi, sse_starlette, oracledb, tiktoken, requests; v = tuple(int(p) for p in version("memorizz").split(".")[:3]); assert (0, 17, 4) <= v < (0, 18)' 2>/dev/null \
+"$PY" -c 'from importlib.metadata import version; import fastapi, sse_starlette, oracledb, tiktoken, requests; v = tuple(int(p) for p in version("memorizz").split(".")[:3]); assert (0, 17, 8) <= v < (0, 18)' 2>/dev/null \
   || "$PY" -m pip install -q -r requirements.txt \
   || { command -v uv >/dev/null && uv pip install --python "$PY" -q -r requirements.txt; }
 

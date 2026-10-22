@@ -45,9 +45,20 @@ jupyter lab notebook/agent_memory_zero_to_hero.ipynb
 
 It reads `OPENAI_API_KEY` and `TYPESAFE_API_KEY` from the environment or from
 `appbook/.env`, and asks for them otherwise. A run takes about five minutes and
-deletes its own rows at the end; set `MEMO_KEEP_DATA=1` to keep them, and
+keeps what it wrote, so its MemoRizz traces appear in the MemoRizz UI (set `MEMO_CLEANUP=1` to delete its rows at the end), and
 `MEMO_MODEL` to change the agents' model (default `gpt-6.1-sol`, the latest) and
 `MEMO_CHEAP_MODEL` the model for background calls (default `gpt-6-luna`, the cheapest).
+
+**No API keys?** Press Enter at the OpenAI key prompt (or set
+`MEMO_PROVIDER=ollama`) and every model call runs on open models on your own
+machine through [Ollama](https://ollama.com): Gemma 4 (`gemma4`, the E4B model,
+about 10 GB) answers for both agents and does their background work, and
+`nomic-embed-text` makes the 256-dimensional vectors. Install Ollama and start
+it; the notebook pulls both models the first time and creates `gemma4-32k`, the
+same model with a 32k-token context window (Ollama's default of 4k would cut
+MemoRizz's longer requests). `MEMO_OPEN_MODEL=gemma4:12b` or `gemma4:26b` picks a
+larger Gemma where memory allows. Without a TypeSafe key, Part 15 routes with
+Gemma alone and says so.
 
 To re-run it and save the outputs in place, from `part7/`:
 

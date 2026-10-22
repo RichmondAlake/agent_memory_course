@@ -1,0 +1,26 @@
+turn 1: 31.2s · tools 20 · meter {'input_tokens': 10776, 'cached_tokens': 0, 'output_tokens': 733}
+turn 2: 31.6s · tools 20 · meter {'input_tokens': 22410, 'cached_tokens': 0, 'output_tokens': 1609}
+turn 3: 30.2s · tools 18 · meter {'input_tokens': 34562, 'cached_tokens': 0, 'output_tokens': 2440}
+turn 4: 35.2s · tools 19 · meter {'input_tokens': 54757, 'cached_tokens': 0, 'output_tokens': 3308}
+turn 5: 32.2s · tools 20 · meter {'input_tokens': 68401, 'cached_tokens': 0, 'output_tokens': 4167}
+turn 6: 36.5s · tools 20 · meter {'input_tokens': 82752, 'cached_tokens': 0, 'output_tokens': 5064}
+turn 7: 13.7s · tools 1 · meter {'input_tokens': 96041, 'cached_tokens': 0, 'output_tokens': 5378}
+turn 8: 12.7s · tools 1 · meter {'input_tokens': 110451, 'cached_tokens': 0, 'output_tokens': 5715}
+turn 9: 12.3s · tools 1 · meter {'input_tokens': 125917, 'cached_tokens': 0, 'output_tokens': 6034}
+turn 10: 13.9s · tools 1 · meter {'input_tokens': 142395, 'cached_tokens': 0, 'output_tokens': 6368}
+turn 11: 12.9s · tools 1 · meter {'input_tokens': 159928, 'cached_tokens': 0, 'output_tokens': 6637}
+turn 12: 12.5s · tools 1 · meter {'input_tokens': 178487, 'cached_tokens': 0, 'output_tokens': 6936}
+turn 13: 12.3s · tools 1 · meter {'input_tokens': 198085, 'cached_tokens': 0, 'output_tokens': 7224}
+turn 14: 13.0s · tools 1 · meter {'input_tokens': 218731, 'cached_tokens': 0, 'output_tokens': 7504}
+turn 15: 12.5s · tools 1 · meter {'input_tokens': 240391, 'cached_tokens': 0, 'output_tokens': 7772}
+turn 16: 16.4s · tools 1 · meter {'input_tokens': 263140, 'cached_tokens': 0, 'output_tokens': 8085}
+turn 17: 11.4s · tools 1 · meter {'input_tokens': 286933, 'cached_tokens': 0, 'output_tokens': 8362}
+turn 18: 192.7s · tools 1 · meter {'input_tokens': 311796, 'cached_tokens': 0, 'output_tokens': 8637}
+turn 19: 13.5s · tools 1 · meter {'input_tokens': 337682, 'cached_tokens': 0, 'output_tokens': 8909}
+turn 20: 10.2s · tools 1 · meter {'input_tokens': 364632, 'cached_tokens': 0, 'output_tokens': 9201}
+turn 21: 12.8s · tools 1 · meter {'input_tokens': 392640, 'cached_tokens': 0, 'output_tokens': 9485}
+turn 22: 8.8s · tools 1 · meter {'input_tokens': 421656, 'cached_tokens': 0, 'output_tokens': 9751}
+turn 23: 13.0s · tools 2 · meter {'input_tokens': 466732, 'cached_tokens': 0, 'output_tokens': 10051}
+ask: Satya Nadella.
+158 35
+DONE

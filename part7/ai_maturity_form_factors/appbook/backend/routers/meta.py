@@ -8,6 +8,7 @@ from backend.config import settings
 from backend.core import db, reranker, sandbox
 from backend.core.agent_runtime import AGENT_AVAILABLE
 from backend.core.underwriting import clef_status, current_policy
+from backend.core.tracing import tracing_status
 
 router = APIRouter(prefix="/api", tags=["meta"])
 
@@ -22,16 +23,25 @@ LEDGER = [
 ]
 
 
+def _open_models() -> dict:
+    from backend.main import OPEN_MODELS
+
+    return {**OPEN_MODELS, "ollama_url": settings.ollama_url}
+
+
 @router.get("/health")
 def health() -> dict:
     return {
         "model": settings.model,
-        "effort": settings.effort,
+        "provider": settings.provider,
+        "open_models": _open_models(),
+        "effort": None if settings.open else settings.effort,
         "retrieval": db.status(),
         "decision_model": clef_status(),
         "reranker": reranker.status(),
         "agent_available": AGENT_AVAILABLE,
         "api_key_set": bool(settings.anthropic_api_key),
+        "tracing": tracing_status(),
     }
 
 

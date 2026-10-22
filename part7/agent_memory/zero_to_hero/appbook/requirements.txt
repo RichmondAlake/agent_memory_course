@@ -1,5 +1,5 @@
 # Agent Memory, from Scratch to MemoRizz — appbook backend.
-memorizz[oracle]>=0.17.4,<0.18
+memorizz[oracle]>=0.17.8,<0.18
 openai>=2.24
 oracledb>=3.4
 tiktoken>=0.8
@@ -8,6 +8,11 @@ fastapi>=0.110
 uvicorn>=0.27
 sse-starlette>=2.0
 python-dotenv>=1.0
+
+# Optional tracing to Arize AX (on only when ARIZE_SPACE_ID and ARIZE_API_KEY are set)
+arize-otel>=0.14
+openinference-instrumentation-openai>=0.1.65
+opentelemetry-sdk>=1.45
 
 # Tests (offline contracts, live checks, browser checks)
 pytest>=8.0

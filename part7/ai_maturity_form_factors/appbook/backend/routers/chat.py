@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from backend.core.anthropic_client import MAX_TOKENS, MODEL, OUTPUT_CONFIG, async_client
+from backend.core.anthropic_client import MAX_TOKENS, MODEL, OUTPUT_CONFIG, THINKING, async_client
 from backend.core.sse import sse_response
 from backend.schemas import ChatRequest
 
@@ -37,7 +37,7 @@ async def message(req: ChatRequest):
 
     async def events():
         parts: list[str] = []
-        async with async_client.messages.stream(model=MODEL, max_tokens=MAX_TOKENS, output_config=OUTPUT_CONFIG,
+        async with async_client.messages.stream(model=MODEL, max_tokens=MAX_TOKENS, output_config=OUTPUT_CONFIG, **THINKING,
                                                 system=SYSTEM, messages=history) as stream:
             async for text in stream.text_stream:
                 parts.append(text)

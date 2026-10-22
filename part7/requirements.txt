@@ -4,6 +4,15 @@
 #   .venv/bin/python -m playwright install chromium     # only for the browser checks
 -r ai_maturity_form_factors/appbook/requirements.txt
 -r agent_memory/zero_to_hero/appbook/requirements.txt
+-r ai_maturity_form_factors/evaluation/appbook/requirements.txt
+-r agent_memory/evaluation/appbook/requirements.txt
+-r retrieval_evaluation/appbook/requirements.txt
+
+# Optional tracing to Arize AX (off unless ARIZE_SPACE_ID and ARIZE_API_KEY are set)
+arize-otel>=0.14
+openinference-instrumentation-anthropic>=3.0
+openinference-instrumentation-openai>=0.1.65
+openinference-instrumentation-claude-agent-sdk>=0.1.21
 
 # Notebooks and the notebook runner (tests/run_notebooks.py)
 jupyter>=1.0

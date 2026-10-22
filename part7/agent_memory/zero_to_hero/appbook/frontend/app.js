@@ -289,7 +289,9 @@ function statusInner() {
     <div class="status-row"><span class="k">Model</span><span class="mono" style="color:var(--text)">${esc(h.model)}</span></div>
     <div class="status-row"><span class="k">Memory</span><span class="dot ${mdot}"></span><span>${label}</span></div>
     <div class="status-row"><span class="k">MemoRizz</span><span class="mono">${esc(mem.memorizz_version || "")}</span></div>
-    <div class="status-row"><span class="k">OpenAI key</span><span class="dot ${h.api_key_set ? "ok" : "off"}"></span><span>${h.api_key_set ? "set" : "missing"}</span></div>
+    ${h.provider === "ollama"
+      ? `<div class="status-row"><span class="k">Models</span><span class="dot ok"></span><span>open · Ollama</span></div>`
+      : `<div class="status-row"><span class="k">OpenAI key</span><span class="dot ${h.api_key_set ? "ok" : "off"}"></span><span>${h.api_key_set ? "set" : "missing"}</span></div>`}
     <div class="status-row"><span class="k">Jev key</span><span class="dot ${h.jev_key_set ? "ok" : "warn"}"></span><span>${h.jev_key_set ? "set" : "missing"}</span></div>`;
 }
 function themeIcon() { return document.documentElement.getAttribute("data-theme") === "light" ? I.sun : I.moon; }
@@ -311,7 +313,7 @@ function setStage(html, accent) {
 }
 function healthBanner(extra) {
   const h = state.health;
-  const reason = extra || (!h ? "" : !h.api_key_set ? "OPENAI_API_KEY is not set. Copy .env.example to .env, add the key and restart." : h.memory?.error || "");
+  const reason = extra || (!h ? "" : !h.api_key_set ? "OPENAI_API_KEY is not set. Copy .env.example to .env and add the key, or set MEMO_PROVIDER=ollama to run open models on this machine, then restart." : h.memory?.error || "");
   return reason ? `<div class="banner warn" id="health-banner">${I.alert}<span>${esc(reason)}</span></div>` : "";
 }
 function warn(host, message) {
@@ -332,7 +334,7 @@ function viewHome() {
     </a>`).join("");
   setStage(`
     <section class="hero">
-      <div class="hero-kicker"><span class="pip"></span> MemoRizz 0.17.4 · Oracle AI Database · GPT-5.5 · Jev</div>
+      <div class="hero-kicker"><span class="pip"></span> MemoRizz 0.17.4 · Oracle AI Database · ${state.health?.provider === "ollama" ? "Gemma 4 (open, on Ollama)" : "GPT-5.5"} · Jev</div>
       <h1>Every memory unit, built twice — <em>from scratch, then with MemoRizz</em>.</h1>
       <p>Memo is an engineering copilot helping Ada migrate her team's RAG stack to Oracle AI Database. Each page is one Part of the notebook: the same message goes to Memo built from your own <code>SCRATCH_*</code> tables and to Memo built with MemoRizz, both on the same Oracle schema, so you can compare the answers, the context and the rows.</p>
     </section>
@@ -450,7 +452,7 @@ function renderCtxRail(last) {
     <div class="ctx-sub">${last ? esc(`Part ${last.part} · thread ${last.thread}`) : "idle"}</div>
     <div class="ctx-legend">${body}</div>
     ${turn ? `<a class="btn cw-rail-link" href="#/context/${turn}">${I.window} Open the full context window</a>` : ""}
-    <div class="ctx-foot">Scratch counts every block it sent; MemoRizz reports its own usage and evidence. Both are real gpt-5.5 calls.</div>`;
+    <div class="ctx-foot">Scratch counts every block it sent; MemoRizz reports its own usage and evidence. Both are real ${esc(state.health?.model || "model")} calls${state.health?.provider === "ollama" ? " on this machine, through Ollama" : ""}.</div>`;
 }
 
 // ── Part actions ─────────────────────────────────────────────────────

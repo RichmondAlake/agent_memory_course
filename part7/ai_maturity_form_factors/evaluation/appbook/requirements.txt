@@ -1,0 +1,29 @@
+# Backend for the maturity ladder's evaluation studio. Pins are lower bounds — newer is fine.
+fastapi>=0.110
+uvicorn>=0.27
+sse-starlette>=2.0
+python-dotenv>=1.0
+anthropic>=1.0             # the application under test (Claude Haiku 5.5) and the Claude judge fallback
+openai>=2.0                # the cross-family LLM judge (gpt-6.1-sol) when OPENAI_API_KEY is set
+numpy>=1.26
+requests>=2.31
+fastembed>=0.8             # nomic embeddings and the bge reranker (ONNX, no PyTorch)
+oracledb>=3.4              # Oracle AI Database: the application's memory and the evidence tables
+claude-agent-sdk>=0.2.168  # the agent and the autonomous builder
+
+# Optional tracing to Arize AX: on when ARIZE_SPACE_ID and ARIZE_API_KEY are set.
+arize-otel>=0.14
+opentelemetry-sdk>=1.45
+openinference-instrumentation-anthropic>=3.0
+openinference-instrumentation-openai>=0.1.65
+openinference-instrumentation-claude-agent-sdk>=0.1.21
+
+# Clef-Flash on Apple silicon via MLX (elsewhere, point CLEF_URL at a SystemOne endpoint).
+huggingface_hub>=0.30
+mlx-vlm>=0.7.4,<0.8; sys_platform == "darwin" and platform_machine == "arm64"
+
+# Tests (tests/): offline contracts, live API checks, browser checks.
+# After installing, run `python -m playwright install chromium` once.
+pytest>=8.0
+httpx>=0.27
+playwright>=1.48

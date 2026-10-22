@@ -2,27 +2,32 @@
 
 Serves the Part pages (one per notebook Part: both agents, their tables and
 actions), the read-only Data Explorer and the static frontend from one origin.
-The Oracle runtime warms in the background. On shutdown the lab session's rows
-are deleted with exact-scope deletes unless MEMO_CLEANUP_ON_RESET=0.
+The Oracle runtime warms in the background. A lab session keeps its rows, so its
+MemoRizz traces appear in the MemoRizz UI; with MEMO_CLEANUP=1 they are deleted
+with exact-scope deletes on reset and on shutdown.
 
 Run from the ``appbook/`` directory:
     uvicorn backend.main:app --port 8710
 """
 from __future__ import annotations
 
-import threading
-from contextlib import asynccontextmanager
-from time import perf_counter
+from backend.core.tracing import setup_tracing
 
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+setup_tracing()   # first: instrument OpenAI before any module creates a client (off without Arize keys)
 
-from backend.config import FRONTEND_DIR
-from backend.core import scratch
-from backend.core.activity import activity, operations_for
-from backend.core.memorizz_memo import runtime
-from backend.core.session import sessions
-from backend.routers import context, data_explorer, meta, parts, tokenomics
+import threading  # noqa: E402
+from contextlib import asynccontextmanager  # noqa: E402
+from time import perf_counter  # noqa: E402
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+from backend.config import FRONTEND_DIR  # noqa: E402
+from backend.core import scratch  # noqa: E402
+from backend.core.activity import activity, operations_for  # noqa: E402
+from backend.core.memorizz_memo import runtime  # noqa: E402
+from backend.core.session import sessions  # noqa: E402
+from backend.routers import context, data_explorer, meta, parts, tokenomics  # noqa: E402
 
 
 @asynccontextmanager

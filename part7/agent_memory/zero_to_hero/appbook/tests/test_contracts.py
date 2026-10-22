@@ -5,6 +5,8 @@
 from __future__ import annotations
 
 import ast
+import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -13,10 +15,12 @@ import pytest
 
 APPBOOK = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APPBOOK))
+# Offline: an empty variable wins over ~/.ppa_workshop/keys.env, so importing the app never turns Arize AX tracing on.
+os.environ["ARIZE_SPACE_ID"] = os.environ["ARIZE_API_KEY"] = ""
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from backend.config import settings  # noqa: E402
+from backend.config import resolve_models, settings  # noqa: E402
 from backend.core import activity, context_view, judge, rows, scratch, session, tokenomics  # noqa: E402
 from backend.main import app  # noqa: E402
 from backend.routers.parts import ACTIONS  # noqa: E402
@@ -178,7 +182,8 @@ def test_health_and_failures_are_clear_without_a_key(offline_client):
     assert offline_client.get("/api/parts/99").status_code == 404
 
 
-def test_tokenomics_prices_and_phases_like_both_agents():
+def test_tokenomics_prices_and_phases_like_both_agents(monkeypatch):
+    monkeypatch.setattr(settings, "open", False)            # list prices: the OpenAI path
     cost, note = tokenomics.price("gpt-5.5", 10_000, 4_000, 500)
     assert cost == pytest.approx((6_000 * 5 + 4_000 * 0.5 + 500 * 30) / 1_000_000)
     assert "list price" in note
@@ -230,6 +235,7 @@ def test_stop_run_ends_the_workload_after_the_turn_in_progress(monkeypatch):
     monkeypatch.setattr(session.LabSession, "naive_chat", lambda self, part, message, thread, **_: self.metrics.append(
         record(self, "naive", part, thread, message)))
     monkeypatch.setattr(session.LabSession, "cleanup", lambda self: cleaned.append(self.run_id) or {})
+    monkeypatch.setattr(session.settings, "cleanup_on_reset", False)        # the default: keep what a run wrote
     monkeypatch.setattr(session.MemorizzMemo, "memory_stack", lambda self: [])
     monkeypatch.setattr(session.scratch, "build_agent", lambda level: scratch.ScratchMemo("x"))
     lab, events = session.LabSession(), []
@@ -244,7 +250,7 @@ def test_stop_run_ends_the_workload_after_the_turn_in_progress(monkeypatch):
 
     result = lab.workload(emit)
     assert sum(e["type"] == "turn" for e in events) == 2 and events[-1] == {"type": "stopped", "after": 2, "total": 30}
-    assert len(result["turns"]) == 6 and result["running"] is False and len(cleaned) == 1   # the bench is cleaned
+    assert len(result["turns"]) == 6 and result["running"] is False and len(cleaned) == 0   # the bench's rows are kept
     assert {k: lab.workload_status()[k] for k in ("state", "completed", "running")} == {
         "state": "stopped", "completed": 2, "running": False}
     events.clear()
@@ -268,6 +274,24 @@ def test_naive_agent_appends_the_whole_thread_and_nothing_else(monkeypatch):
     assert sent[1][1] == [{"role": "user", "content": "one"}, {"role": "assistant", "content": "answer 1"},
                           {"role": "user", "content": "two"}]
     assert all(instructions == scratch.INSTRUCTION and tools is None for instructions, _, tools in sent)
+
+
+def test_open_models_path_resolves_from_the_environment(monkeypatch):
+    open_ = resolve_models({})                                  # no OpenAI key: open models through Ollama
+    assert (open_["provider"], open_["model"], open_["judge_model"], open_["embed_model"]) == (
+        "ollama", "gemma4-32k", "gemma4-32k", "nomic-embed-text")
+    assert open_["openai_base_url"] == "http://localhost:11434/v1" and open_["open_context"] == 32768
+    chosen = resolve_models({"MEMO_PROVIDER": "ollama", "OPENAI_API_KEY": "sk-x", "MEMO_OPEN_MODEL": "gemma4:12b",
+                             "OLLAMA_URL": "http://gpu-box:11434/"})
+    assert chosen["model"] == "gemma4-12b-32k" and chosen["openai_base_url"] == "http://gpu-box:11434/v1"
+    paid = resolve_models({"OPENAI_API_KEY": "sk-x"})
+    assert paid["provider"] == "openai" and paid["openai_base_url"] is None and paid["model"] == "gpt-5.5"
+    monkeypatch.setattr(settings, "open", True)
+    cost, note = tokenomics.price("gemma4-32k", 10_000, 0, 500)
+    assert cost == 0.0 and "Ollama" in note                     # open models on this machine cost nothing
+    source = (APPBOOK / "backend/core/memorizz_memo.py").read_text()
+    assert "def prepare_open_models()" in source and '"num_ctx": settings.open_context' in source
+    assert "def open_embeddings()" in source and "create_again_if_empty" in source
 
 
 def test_scratch_model_and_tool_calls_are_metered():
@@ -381,8 +405,8 @@ def test_memorizz_rebuilds_name_their_knowledge_bases():
         source = (APPBOOK / path).read_text()
         assert not any(call in source for call in ("attach_to_agent(", "add_tool(", "set_persona(")), path
     assert "tools=governed_tools()" in (APPBOOK / "backend/core/session.py").read_text()
-    assert "memorizz[oracle]>=0.17.4,<0.18" in (APPBOOK / "requirements.txt").read_text()
-    assert '(0, 17, 4) <= v < (0, 18)' in (APPBOOK / "run.sh").read_text()
+    assert "memorizz[oracle]>=0.17.8,<0.18" in (APPBOOK / "requirements.txt").read_text()
+    assert '(0, 17, 8) <= v < (0, 18)' in (APPBOOK / "run.sh").read_text()
 
 
 def _usage(inputs: int, cached: int, outputs: int):
@@ -481,3 +505,85 @@ def test_frontend_has_the_context_window_page():
     assert set(context_view.KINDS) <= set(re.findall(r"(\w+): \"#[0-9a-f]{6}\"", context_js.split("};")[0]))
     assert 'href="#/context"' in APP_JS and "viewContext(" in APP_JS and "#/context/${a.turn}" in APP_JS
     assert "#/context/${Number(r.turn)}" in (APPBOOK / "frontend/tokenomics.js").read_text()
+
+
+# ── tracing to Arize AX ────────────────────────────────────────────────────────────────────────────────────────
+from backend.core import tracing  # noqa: E402
+
+
+def test_tracing_is_off_without_keys():
+    assert os.environ["ARIZE_SPACE_ID"] == "" and tracing.tracing_status() == "off"
+    with tracing.traced("anything", "CHAIN") as span:
+        assert span is None
+
+
+@pytest.fixture
+def in_memory_tracing(monkeypatch):
+    """Tracing on, with an in-memory exporter in place of Arize's register(): nothing leaves the process."""
+    from openinference.instrumentation.openai import OpenAIInstrumentor
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    exporter = InMemorySpanExporter()
+
+    def fake_register(**kwargs):
+        assert kwargs["set_global_tracer_provider"] is False and kwargs["project_name"] == "agent-memory-zero-to-hero-appbook"
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        return provider
+
+    monkeypatch.setenv("ARIZE_SPACE_ID", "space-for-tests")
+    monkeypatch.setenv("ARIZE_API_KEY", "key-for-tests")
+    monkeypatch.delenv("ARIZE_PROJECT_NAME", raising=False)
+    monkeypatch.setattr(tracing, "_load_keys", lambda: None)
+    saved = dict(tracing._state)
+    tracing._state.update(tracer=None, provider=None, project=None, done=False)
+    assert tracing.setup_tracing(register=fake_register) == "arize-ax:agent-memory-zero-to-hero-appbook"
+    yield exporter
+    OpenAIInstrumentor().uninstrument()
+    tracing._state.update(saved)
+
+
+def test_the_jev_routing_request_is_an_llm_span(in_memory_tracing, monkeypatch):
+    class FakeResponse:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"answers": {"item_0": {"probabilities": {"entity": 0.93, "knowledge": 0.07}}},
+                    "usage": {"input_tokens": 210, "output_tokens": 4}}
+
+    monkeypatch.setattr(settings, "typesafe_api_key", "typesafe-for-tests")
+    monkeypatch.setattr(scratch.requests, "post", lambda *args, **kwargs: FakeResponse())
+    assert scratch.jev_route(["Ada prefers to be paged on Slack."]) == [{"entity": 0.93, "knowledge": 0.07}]
+    (span,) = in_memory_tracing.get_finished_spans()
+    a = span.attributes
+    assert span.name == "systemone jev-latest" and a["openinference.span.kind"] == "LLM"
+    assert a["llm.provider"] == "typesafe" and a["llm.model_name"] == "jev-latest" and a["llm.token_count.prompt"] == 210
+    assert "Slack" in a["input.value"] and "0.93" in a["output.value"]
+    assert "typesafe-for-tests" not in json.dumps(dict(a)) and "key-for-tests" not in json.dumps(dict(a))
+
+
+def test_each_memory_unit_read_is_a_retriever_span(in_memory_tracing, monkeypatch):
+    class Facts(scratch.Layer):
+        name = "entity"
+
+        def read(self, turn):
+            turn.blocks.append(("Known facts", "Ada lives in Lisbon."))
+
+    agent = scratch.ScratchMemo.__new__(scratch.ScratchMemo)
+    agent.instruction, agent.layers, agent.last_turn = "Be brief.", [], None
+    agent.respond = lambda memo, turn: "You live in Lisbon."
+    agent.add(Facts())
+    assert agent.run("Where do I live?", memory_id="m", user_id="u", thread_id="t") == "You live in Lisbon."
+    (span,) = [s for s in in_memory_tracing.get_finished_spans() if s.name == "entity read"]
+    assert span.attributes["openinference.span.kind"] == "RETRIEVER" and span.attributes["input.value"] == "Where do I live?"
+    assert span.attributes["retrieval.documents.0.document.id"] == "Known facts"
+    assert span.attributes["retrieval.documents.0.document.content"] == "Ada lives in Lisbon."
+
+
+def test_tracing_never_replaces_the_global_tracer_provider(in_memory_tracing):
+    from opentelemetry import trace
+
+    assert type(trace.get_tracer_provider()).__name__ == "ProxyTracerProvider"
