@@ -359,8 +359,10 @@ check("tokenomics · both agents ran with every memory unit (MemoRizz: knowledge
       {"conversation", "entities", "knowledge", "summaries", "semantic cache"} <= set(stacks.get("scratch") or [])
       and {"knowledge_base", "entity_memory", "summaries", "skillbox", "workflow_memory", "semantic_cache",
            "evidence pack (continual learning)"} <= set(stacks.get("memorizz") or []), stacks)
-check("tokenomics · the summary totals all three agents",
-      all((summary.get(a) or {}).get("turns", 0) >= 30 and (summary.get(a) or {}).get("total_cost_usd", 0) > 0
+local = client.get("/api/health").json().get("provider") == "ollama"     # open models on this machine cost nothing
+check("tokenomics · the summary totals all three agents" + (" (local models: $0)" if local else ""),
+      all((summary.get(a) or {}).get("turns", 0) >= 30
+          and ((summary.get(a) or {}).get("total_cost_usd") == 0 if local else (summary.get(a) or {}).get("total_cost_usd", 0) > 0)
           for a in ("scratch", "memorizz", "naive")), summary)
 from backend.core import scratch  # noqa: E402  (same credentials as the server's .env)
 

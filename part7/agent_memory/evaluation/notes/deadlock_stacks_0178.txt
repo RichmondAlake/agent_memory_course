@@ -1,0 +1,118 @@
+Timeout (0:04:00)!
+Thread 0x000000017481b000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x000000017380f000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/ssl.py", line 1117 in read
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/ssl.py", line 1244 in recv
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_backends/sync.py", line 127 in read
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/http11.py", line 200 in _receive_event
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/http11.py", line 167 in _receive_response_headers
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/http11.py", line 97 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/connection.py", line 96 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/connection_pool.py", line 224 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_transports/default.py", line 245 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 1076 in _send_single_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 1043 in _send_handling_redirects
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 1008 in _send_handling_auth
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 980 in send
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1069 in _send_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_client.py", line 588 in _send_with_auth_retry
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_client.py", line 609 in _send_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1148 in request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1440 in post
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/resources/responses/responses.py", line 1054 in create
+  File "notes/probe_deadlock_0178.py", line 27 in counted_responses
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/llms/openai.py", line 536 in _generate_responses
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/llms/openai.py", line 629 in generate
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 6064 in _generate_once_with_trace
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 6029 in _generate_with_trace
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 10488 in _execute_llm_interaction
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 6602 in run
+  File "notes/probe_deadlock_0178.py", line 48 in tell
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 59 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 93 in _worker
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x0000000172777000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1169 in _wait_for_tstate_lock
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1149 in join
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x000000017176b000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 355 in wait
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 655 in wait
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00000001fb9b1e80 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 355 in wait
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py", line 451 in result
+  File "notes/probe_deadlock_0178.py", line 51 in <module>
+Timeout (0:04:00)!
+Thread 0x000000017481b000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 90 in _worker
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x000000017380f000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/ssl.py", line 1117 in read
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/ssl.py", line 1244 in recv
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_backends/sync.py", line 127 in read
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/http11.py", line 200 in _receive_event
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/http11.py", line 167 in _receive_response_headers
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/http11.py", line 97 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/connection.py", line 96 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpcore2/_sync/connection_pool.py", line 224 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_transports/default.py", line 245 in handle_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 1076 in _send_single_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 1043 in _send_handling_redirects
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 1008 in _send_handling_auth
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/httpx2/_client.py", line 980 in send
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1069 in _send_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_client.py", line 588 in _send_with_auth_retry
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_client.py", line 609 in _send_request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1148 in request
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/_base_client.py", line 1440 in post
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/openai/resources/responses/responses.py", line 1054 in create
+  File "notes/probe_deadlock_0178.py", line 27 in counted_responses
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/llms/openai.py", line 536 in _generate_responses
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/llms/openai.py", line 629 in generate
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 6064 in _generate_once_with_trace
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 6029 in _generate_with_trace
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 10488 in _execute_llm_interaction
+  File "~/Desktop/agent_memory_course/part7/.venv/lib/python3.12/site-packages/memorizz/memagent/core.py", line 6602 in run
+  File "notes/probe_deadlock_0178.py", line 48 in tell
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 59 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 93 in _worker
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x0000000172777000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1169 in _wait_for_tstate_lock
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1149 in join
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x000000017176b000 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 355 in wait
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 655 in wait
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1012 in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00000001fb9b1e80 (most recent call first):
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/threading.py", line 355 in wait
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/_base.py", line 451 in result
+  File "notes/probe_deadlock_0178.py", line 51 in <module>

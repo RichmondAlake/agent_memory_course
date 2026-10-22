@@ -51,8 +51,8 @@ The notebook is the **starting point**. It opens with a table that plans the fiv
 It closes with **Where to next?** — how to decide which form factor fits a given problem (climb only as high as you need).
 
 ### Run the notebook
-1. **Start the database** (shared by every Part 7 module, see §3): from `part7/`, `./oracle.sh start`
-2. Set `ANTHROPIC_API_KEY` (in your shell, or in `appbook/.env`, which the notebook reads); otherwise the notebook prompts for it
+1. **Start the database** (shared by every Part 7 module, see §4): from `part7/`, `./oracle.sh start`
+2. Set `ANTHROPIC_API_KEY` (in your shell, or in `appbook/.env`, which the notebook reads); otherwise the notebook prompts for it. **No key?** Press Enter at the prompt (or set `AIML_PROVIDER=ollama`) and every model call runs on Gemma 4 on your machine through [Ollama](https://ollama.com); the notebook pulls it the first time (about 10 GB)
 3. Open `notebook/ai_maturity_form_factors_notebook.ipynb` and run the cells top to bottom (≈6 minutes on Apple silicon, plus a one-time Clef-Flash download)
 
 To re-run it unattended and save the outputs into the notebook (from `part7/`):
@@ -90,14 +90,29 @@ What the appbook demonstrates beyond the notebook — the concerns that matter i
 ```bash
 ./oracle.sh start          # from part7/ — the same database the notebook uses (required)
 cd ai_maturity_form_factors/appbook
-cp .env.example .env       # add your ANTHROPIC_API_KEY
+cp .env.example .env       # add your ANTHROPIC_API_KEY, or leave it empty for Gemma 4 through Ollama
 ./run.sh                   # → http://127.0.0.1:8700
 ```
 See [`appbook/README.md`](appbook/README.md) for the architecture, safety model, tests, and Codespaces notes.
 
 ---
 
-## 3. Shared setup — one Oracle AI Database for Part 7
+## 3. Finally — evaluate it, step by step
+
+[`evaluation/`](evaluation/)
+
+A demo shows that a form factor *can* work; an evaluation measures *how often* it does, at what cost. The evaluation notebook rebuilds the five rungs and evaluates each one the way its own failures demand: closed-book answers and the conversation buffer for the chatbot; retrieval metrics per technique, faithfulness, citations and freshness for RAG; each workflow step on gold inputs, then end to end with unsafe errors; agent tasks judged by the state they leave in Oracle, repeated for pass^k, with a prompt-injection test; and hidden tests plus an audit of every tool call for the autonomous agent. Three graders (code, the Clef and Jev decision models, and an LLM judge from another model family) are validated against labels built by construction before any of them grades the application. The run ends with a scorecard and release gates, and every result is stored in Oracle (`FFEVAL_*` tables).
+
+| Surface | What it is |
+|---|---|
+| [`evaluation/notebook/ai_maturity_evaluation.ipynb`](evaluation/notebook/ai_maturity_evaluation.ipynb) | the evaluation, Parts 0 to 8, saved with a live run's outputs |
+| [`evaluation/appbook/`](evaluation/appbook/) | the evaluation studio on port 8705: run the suites live, explore the graders, compare runs, read the evidence |
+
+See [`evaluation/README.md`](evaluation/README.md).
+
+---
+
+## 4. Shared setup — one Oracle AI Database for Part 7
 
 Every Part 7 notebook and appbook uses the **same** Oracle AI Database, started
 by `part7/oracle.sh` (run it from the `part7/` folder):
@@ -120,7 +135,7 @@ provisions anything, and stops with an error if provisioning fails. The
 credentials match the appbook `.env.example` files. **Prerequisite:** Docker
 must be installed and running. Oracle is required by both the notebook and the appbook.
 
-Beyond Oracle you need an **`ANTHROPIC_API_KEY`**. Form Factors 3 and 4 use Clef-Flash, which runs in-process on Apple silicon (MLX) or at a SystemOne endpoint set in `CLEF_URL`. Form Factors 4 and 5 use the `claude-agent-sdk`, whose wheel bundles the `claude` CLI.
+Beyond Oracle you need an **`ANTHROPIC_API_KEY`**, or Ollama with Gemma 4 for the open path (no key). Form Factors 3 and 4 use Clef-Flash, which runs in-process on Apple silicon (MLX) or at a SystemOne endpoint set in `CLEF_URL`. Form Factors 4 and 5 use the `claude-agent-sdk`, whose wheel bundles the `claude` CLI.
 
 ---
 
@@ -132,13 +147,16 @@ ai_maturity_form_factors/
 ├── notebook/          ← START HERE: every concept, built up programmatically
 │   ├── ai_maturity_form_factors_notebook.ipynb
 │   └── img/           diagrams (PNG on a black background)
-└── appbook/           ← THEN: the same five form factors as an application
-    ├── backend/       FastAPI app — one router per form factor, Oracle memory, Clef, Agent SDK
-    ├── frontend/      dependency-free single-page UI (no build step)
-    ├── tests/         offline contracts · live API checks · browser checks
-    ├── run.sh         launch the app (port 8700)
-    ├── .env.example   ANTHROPIC_API_KEY + Oracle connection settings
-    └── README.md      app architecture, safety model & tests
+├── appbook/           ← THEN: the same five form factors as an application
+│   ├── backend/       FastAPI app — one router per form factor, Oracle memory, Clef, Agent SDK
+│   ├── frontend/      dependency-free single-page UI (no build step)
+│   ├── tests/         offline contracts · live API checks · browser checks
+│   ├── run.sh         launch the app (port 8700)
+│   ├── .env.example   ANTHROPIC_API_KEY + Oracle connection settings
+│   └── README.md      app architecture, safety model & tests
+└── evaluation/        ← FINALLY: evaluate each form factor, step by step
+    ├── notebook/      ai_maturity_evaluation.ipynb + img/
+    └── appbook/       the evaluation studio (port 8705)
 ```
 
 The database helper lives one level up, at `part7/oracle.sh`.

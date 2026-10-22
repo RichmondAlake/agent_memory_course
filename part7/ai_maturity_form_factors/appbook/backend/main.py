@@ -8,20 +8,24 @@ Run from the `appbook/` directory:
 """
 from __future__ import annotations
 
-import asyncio
-import threading
-from contextlib import asynccontextmanager
-from time import perf_counter
+from backend.core.tracing import setup_tracing
 
-from fastapi import FastAPI
-from fastapi.concurrency import run_in_threadpool
-from fastapi.staticfiles import StaticFiles
+setup_tracing()   # first: the Agent SDK's instrumentor must patch query() before any module imports it
 
-from backend.config import DEFAULT_PORT, FRONTEND_DIR
-from backend.core import db, sandbox
-from backend.core.activity import activity, operations_for
-from backend.core.automations import automation_store
-from backend.routers import agent, builder, chat, data_explorer, meta, rag, workflow
+import asyncio  # noqa: E402
+import threading  # noqa: E402
+from contextlib import asynccontextmanager  # noqa: E402
+from time import perf_counter  # noqa: E402
+
+from fastapi import FastAPI  # noqa: E402
+from fastapi.concurrency import run_in_threadpool  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+
+from backend.config import DEFAULT_PORT, FRONTEND_DIR, settings  # noqa: E402
+from backend.core import db, sandbox  # noqa: E402
+from backend.core.activity import activity, operations_for  # noqa: E402
+from backend.core.automations import automation_store  # noqa: E402
+from backend.routers import agent, builder, chat, data_explorer, meta, rag, workflow  # noqa: E402
 
 
 async def _scheduler_loop() -> None:
@@ -34,8 +38,20 @@ async def _scheduler_loop() -> None:
             pass
 
 
+OPEN_MODELS = {"status": "preparing" if settings.open else "off", "error": None}
+
+
 def _warm_up() -> None:
-    """Oracle first (pool, legacy clean-up, schema, seed), then the sandbox with a fresh policy export."""
+    """Open models first (Gemma 4 through Ollama), then Oracle (pool, legacy clean-up, schema, seed), then the
+    sandbox with a fresh policy export."""
+    if settings.open:
+        from backend.core import anthropic_client
+
+        try:
+            anthropic_client.prepare_open_models()
+            OPEN_MODELS.update(status="ready", error=None)
+        except Exception as exc:  # noqa: BLE001 - shown on the status card
+            OPEN_MODELS.update(status="error", error=f"Ollama at {settings.ollama_url}: {type(exc).__name__}: {exc}"[:300])
     db.bootstrap()
     sandbox.seed_if_empty()
     if db.ready() and not (sandbox.SANDBOX / "policy.json").exists():

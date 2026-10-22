@@ -26,6 +26,8 @@ from typing import Any, Iterator
 
 from memorizz.observability.pricing import DEFAULT_PRICING
 
+from backend.config import settings
+
 _local = threading.local()
 
 # Golden questions: each reference uses only what both agents are given by the setup of the Parts
@@ -217,6 +219,8 @@ def layer_work(label: str | None = None) -> Iterator[None]:
 
 
 def price(model: str, input_tokens: int, cached_tokens: int, output_tokens: int) -> tuple[float | None, str]:
+    if settings.open:
+        return 0.0, f"Open model on this machine ({model} through Ollama): no API cost"
     quote = DEFAULT_PRICING.quote({"provider": "openai", "model": model, "input_tokens": input_tokens,
                                    "cached_tokens": cached_tokens, "output_tokens": output_tokens})
     if quote.get("cost_status") != "calculated":

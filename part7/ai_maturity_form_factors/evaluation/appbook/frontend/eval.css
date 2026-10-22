@@ -1,0 +1,72 @@
+/* ======================================================================
+   Evaluation studio additions on top of the maturity ladder's design system.
+   ====================================================================== */
+:root { --g1: #22d3ee; --g2: #c084fc; --g3: #fb923c; --ok: #34d399; --bad: #fb7185; --warn: #facc15; }
+
+.explorer-body.two-col { grid-template-columns: 260px minmax(0, 1fr); }
+
+.eval-head { margin-bottom: 26px; }
+.eval-kicker { font: 500 11px var(--font-mono); letter-spacing: .18em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+.eval-title { font-size: clamp(26px, 3.4vw, 38px); line-height: 1.08; letter-spacing: -.02em; font-weight: 600; margin-bottom: 12px; }
+.eval-title em { font-family: var(--font-serif); font-style: italic; font-weight: 400; color: var(--accent); }
+.eval-desc { color: var(--text-2); max-width: 78ch; font-size: 15.5px; }
+
+.measure-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 14px; }
+.measure-table th { text-align: left; font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); padding: 7px 10px; border-bottom: 1px solid var(--line-2); }
+.measure-table td { padding: 7px 10px; border-bottom: 1px solid var(--line); color: var(--text-2); vertical-align: top; }
+.measure-table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+
+.runbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.runbar .status-line { font: 12px var(--font-mono); color: var(--text-2); }
+.runbar .status-line b { color: var(--text); }
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin: 14px 0; }
+.tile { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; }
+.tile .tk { font: 500 10px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.tile .tv { font: 600 22px var(--font-mono); color: var(--text); margin-top: 4px; }
+.tile .ts { font: 11px var(--font-mono); color: var(--text-3); margin-top: 2px; }
+.tile.good .tv { color: var(--ok); } .tile.bad .tv { color: var(--bad); }
+
+.pill { display: inline-block; font: 600 10px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--line-2); color: var(--text-2); }
+.pill.ready, .pill.pass, .pill.correct, .pill.true { color: var(--ok); border-color: color-mix(in oklab, var(--ok) 45%, transparent); background: color-mix(in oklab, var(--ok) 10%, transparent); }
+.pill.blocked, .pill.fail, .pill.wrong, .pill.false, .pill.unsafe { color: var(--bad); border-color: color-mix(in oklab, var(--bad) 45%, transparent); background: color-mix(in oklab, var(--bad) 10%, transparent); }
+.pill.abstained, .pill.safe, .pill.refer, .pill.running { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 45%, transparent); background: color-mix(in oklab, var(--warn) 8%, transparent); }
+.pill.notmeasured, .pill.idle { color: var(--text-3); }
+
+.table-wrap { max-height: 460px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-sm); }
+.table-wrap .data-table th { position: sticky; top: 0; background: var(--panel-2); z-index: 1; }
+.data-table td.wrap { white-space: normal; max-width: 520px; }
+.data-table td.ok { color: var(--ok); } .data-table td.no { color: var(--bad); }
+
+.section-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.chart-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.chart-box { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; }
+.chart-box h4 { font: 500 10.5px var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 8px; }
+.chart-box svg { width: 100%; max-width: 640px; height: auto; display: block; }
+.chart-box svg text { font-family: var(--font-mono); fill: var(--text-2); }
+
+.rung-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.rung-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); text-decoration: none; color: inherit; display: block; }
+.rung-card:hover { border-color: var(--line-2); }
+.rung-card .rc-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.rung-card .rc-n { font: 500 11px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--text-3); }
+.rung-card .rc-v { font: 600 28px var(--font-mono); }
+.rung-card .rc-l { font-size: 12.5px; color: var(--text-2); }
+.rung-card .rc-x { font: 11px var(--font-mono); color: var(--text-3); margin-top: 8px; line-height: 1.5; }
+
+.heat td.cell { text-align: right; font-family: var(--font-mono); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-grid label { display: flex; flex-direction: column; gap: 4px; font: 500 10.5px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.form-grid .full { grid-column: 1 / -1; }
+.form-grid textarea { min-height: 64px; font-size: 13.5px; }
+select { font: 13px var(--font-mono); color: var(--text); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: var(--radius-sm); padding: 8px 10px; }
+.answers { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 14px; }
+.answer-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 12px; }
+.answer-card.chosen { border-color: var(--accent); }
+.answer-card .p { font: 600 26px var(--font-mono); }
+.pbar { height: 6px; border-radius: 3px; background: var(--panel-3); margin: 8px 0; overflow: hidden; }
+.pbar i { display: block; height: 100%; background: var(--accent); }
+.log-lines { font: 12px var(--font-mono); color: var(--text-2); max-height: 160px; overflow: auto; }
+.log-lines div { padding: 2px 0; border-bottom: 1px dashed var(--line); }
+.readme { white-space: pre-wrap; font: 12px var(--font-mono); color: var(--text-2); max-height: 320px; overflow: auto; background: var(--panel-2); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); }
+@media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } }

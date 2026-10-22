@@ -9,17 +9,19 @@ Claude, Oracle AI Database, Clef-Flash and the Agent SDK — is covered by check
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 APPBOOK = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(APPBOOK))
+os.environ.update(ARIZE_SPACE_ID="", ARIZE_API_KEY="")   # the tests never send spans to Arize AX
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 from pydantic import ValidationError  # noqa: E402
 
-from backend.config import DEFAULT_PORT, settings  # noqa: E402
+from backend.config import DEFAULT_PORT, resolve_models, settings  # noqa: E402
 from backend.core import policy, sandbox  # noqa: E402
 from backend.core import underwriting as uw  # noqa: E402
 from backend.core.activity import operations_for  # noqa: E402
@@ -61,10 +63,24 @@ def client():
 
 # ── configuration and serving ────────────────────────────────────────────────────
 def test_model_effort_and_port():
-    assert settings.model == "claude-haiku-5-5" or settings.model.startswith("claude-")
+    claude = resolve_models({"ANTHROPIC_API_KEY": "sk-ant-x"})
+    assert (claude["provider"], claude["model"], claude["anthropic_base_url"]) == ("anthropic", "claude-haiku-5-5", None)
     assert OUTPUT_CONFIG == {"effort": settings.effort}
     assert settings.max_tokens >= 2048          # Haiku 5.5 thinks first; room for thinking and the answer
     assert DEFAULT_PORT == 8700 and 'PORT="${PORT:-8700}"' in (APPBOOK / "run.sh").read_text()
+
+
+def test_open_models_path_through_ollama():
+    open_ = resolve_models({})                                  # no Anthropic key: Gemma 4 through Ollama
+    assert (open_["provider"], open_["model"], open_["anthropic_base_url"]) == (
+        "ollama", "gemma4-32k", "http://localhost:11434")
+    chosen = resolve_models({"AIML_PROVIDER": "ollama", "ANTHROPIC_API_KEY": "sk-ant-x", "AIML_OPEN_MODEL": "gemma4:12b"})
+    assert chosen["model"] == "gemma4-12b-32k" and chosen["anthropic_api_key"] == "ollama"
+    client_source = (APPBOOK / "backend/core/anthropic_client.py").read_text()
+    assert '"num_ctx": 32768' in client_source and "format=schema" in client_source
+    assert '"thinking": {"type": "disabled"}' in client_source
+    runtime = (APPBOOK / "backend/core/agent_runtime.py").read_text()
+    assert "ANTHROPIC_BASE_URL=settings.anthropic_base_url" in runtime and "unrecognized_model" in runtime
 
 
 def test_bundled_agent_cli_is_preferred():
@@ -224,3 +240,80 @@ def test_reranker_loads_lazily():
     from backend.core import reranker
     assert reranker.MODEL == "BAAI/bge-reranker-v2-m3-int8" and reranker.CANDIDATES == 8
     assert reranker.status()["loaded"] is False          # nothing is downloaded until the first rerank
+
+
+# ── tracing to Arize AX (offline: an in-memory exporter stands in for Arize) ─────────────────────────────────
+from backend.core import reranker, tracing  # noqa: E402
+from backend.core.retrieval import Hit  # noqa: E402
+
+
+def test_tracing_is_off_without_keys():
+    assert tracing.tracing_status() == "off"
+    with tracing.traced("anything", "LLM") as span:
+        assert span is None
+
+
+@pytest.fixture
+def in_memory_tracing(monkeypatch):
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    exporter = InMemorySpanExporter()
+
+    def in_memory_register(**kwargs):
+        provider = TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        return provider
+
+    monkeypatch.setattr(tracing, "_register", in_memory_register)
+    monkeypatch.setenv("ARIZE_SPACE_ID", "test-space")
+    monkeypatch.setenv("ARIZE_API_KEY", "test-key")
+    saved = dict(tracing._state)
+    tracing._state.update(configured=False, tracer=None, provider=None, project=None)
+    tracing.setup_tracing()
+    yield exporter
+    for instrumentor in tracing._instrumentors():
+        instrumentor.uninstrument()
+    tracing._state.update(saved)
+
+
+def test_tracing_records_a_clef_decision(in_memory_tracing, monkeypatch):
+    import requests
+
+    class Reply:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"answers": {"decision": {"choice": "approve", "confidence": 0.94}}, "usage": {"input_tokens": 900}}
+
+    monkeypatch.setattr(settings, "clef_url", "http://clef.test")
+    monkeypatch.setattr(requests, "post", lambda *args, **kwargs: Reply())
+    assert uw.systemone({"model": "clef-flash", "state": {}, "questions": {}})["answers"]["decision"]["choice"] == "approve"
+    span = in_memory_tracing.get_finished_spans()[0]
+    assert span.name == "clef-flash" and span.attributes["openinference.span.kind"] == "LLM"
+    assert span.attributes["llm.provider"] == "local" and span.attributes["llm.model_name"] == "clef via http://clef.test"
+    assert span.attributes["llm.token_count.prompt"] == 900 and "approve" in span.attributes["output.value"]
+    assert tracing.tracing_status() == "arize-ax:ai-maturity-form-factors-appbook"
+
+
+def test_tracing_records_the_reranker(in_memory_tracing, monkeypatch):
+    class Model:
+        def rerank(self, query, texts):
+            return [0.1, 0.9]
+
+    monkeypatch.setattr(reranker, "_model", lambda: Model())
+    hits = [Hit("pmi", "PMI", "collateral", 1, 0.7, "PMI text"), Hit("ltv_limit", "LTV", "collateral", 1, 0.6, "LTV text")]
+    assert [h.doc_id for h in reranker.rerank("How much can I borrow?", hits, 1)["hits"]] == ["ltv_limit"]
+    span = in_memory_tracing.get_finished_spans()[0]
+    assert span.attributes["openinference.span.kind"] == "RERANKER" and span.attributes["reranker.top_k"] == 1
+    assert span.attributes["reranker.output_documents.0.document.id"] == "ltv_limit"
+    assert span.attributes["reranker.input_documents.1.document.content"] == "LTV text"
+
+
+def test_tracing_keeps_the_global_provider(in_memory_tracing):
+    from opentelemetry import trace
+
+    assert isinstance(trace.get_tracer_provider(), trace.ProxyTracerProvider)   # no duplicate Anthropic SDK spans
+

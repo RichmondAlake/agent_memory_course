@@ -26,7 +26,7 @@ activity rail. It is read-only: it cannot run arbitrary SQL or open any other ta
 ./oracle.sh start
 
 # from this folder
-cp .env.example .env        # add your ANTHROPIC_API_KEY
+cp .env.example .env        # add your ANTHROPIC_API_KEY, or leave it empty for Gemma 4 through Ollama
 ./run.sh                    # → http://127.0.0.1:8700
 ```
 
@@ -51,9 +51,16 @@ notes and sessions.
 
 ## Requirements
 
-- **`ANTHROPIC_API_KEY`** — required for every model call. Read from the process
-  environment first, then `appbook/.env`, `../.env` or `part7/.env`. The model is
-  `claude-haiku-5-5` at `low` effort (`AIML_MODEL`, `AIML_EFFORT`).
+- **`ANTHROPIC_API_KEY`**, or **open models**. With the key, every model call goes to
+  Claude: `claude-haiku-5-5` at `low` effort (`AIML_MODEL`, `AIML_EFFORT`), read from
+  the process environment first, then `appbook/.env`, `../.env` or `part7/.env`.
+  Without it (or with `AIML_PROVIDER=ollama`), every call runs on **Gemma 4** on this
+  machine through [Ollama](https://ollama.com): the same Messages API for Form Factors
+  1–3, and the same Claude Code runtime for the agents in 4 and 5, pointed at Ollama.
+  On first start the app pulls Gemma 4 and creates `gemma4-32k` (a 32k-token context
+  window); the status card shows it. `AIML_OPEN_MODEL` and `OLLAMA_URL` pick another
+  Gemma or another host. A small model on a laptop is slower and follows the agents'
+  instructions less reliably than Claude.
 - **Oracle AI Database** — required. Policy memory, decisions, case notes and agent
   sessions all live there. Pages that need it show a banner until it is ready.
 - **Clef-Flash** — the open-source (Apache-2.0) decision model for Form Factors 3 and 4.
@@ -62,6 +69,13 @@ notes and sessions.
 - **Claude Agent SDK** — required for Form Factors 4 and 5 and installed by
   `requirements.txt`. The wheel bundles its own `claude` CLI, which the app uses
   in preference to any `claude` on your `PATH`.
+
+## Tracing to Arize AX
+
+Set `ARIZE_SPACE_ID` and `ARIZE_API_KEY` (in the environment or `.env`) and every call is traced to the Arize AX
+project `ai-maturity-form-factors-appbook` (`ARIZE_PROJECT_NAME` overrides it). Claude and the agents are traced
+automatically; Clef-Flash, Ollama, the embeddings, every retrieval technique and the reranker get their own spans.
+Off by default; `/api/health` reports `tracing`.
 
 ## Safety
 

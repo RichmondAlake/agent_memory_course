@@ -41,6 +41,9 @@ def agent_env() -> dict[str, str]:
     env = {k: v for k, v in os.environ.items() if v is not None}
     if settings.anthropic_api_key:
         env["ANTHROPIC_API_KEY"] = settings.anthropic_api_key
+    if settings.open:   # the Claude Code runtime, on Gemma 4 through Ollama's Messages API
+        env.update(ANTHROPIC_BASE_URL=settings.anthropic_base_url, ANTHROPIC_DEFAULT_HAIKU_MODEL=settings.model,
+                   ANTHROPIC_DEFAULT_SONNET_MODEL=settings.model, ANTHROPIC_DEFAULT_OPUS_MODEL=settings.model)
     python_bin = str(Path(sys.executable).parent)
     env["PATH"] = os.pathsep.join([python_bin, env.get("PATH", "")])
     env.setdefault("MPLBACKEND", "Agg")
@@ -49,8 +52,9 @@ def agent_env() -> dict[str, str]:
 
 
 def cli_stderr(line: str) -> None:
-    """Forward the bundled CLI's stderr, minus its notice that claude.ai connectors are off under an API key."""
-    if "connectors are disabled" not in line:
+    """Forward the bundled CLI's stderr, minus its notice that claude.ai connectors are off under an API key
+    (and, on open models, its note that it does not recognise Gemma's model name)."""
+    if "connectors are disabled" not in line and "unrecognized_model" not in line:
         print(line, file=sys.stderr)
 
 
@@ -100,7 +104,8 @@ async def run_agent_events(prompt: str, options, context: RunContext | None = No
             elif isinstance(message, ResultMessage):
                 result_seen = True
                 yield {"type": "result", "session_id": message.session_id, "subtype": message.subtype,
-                       "cost_usd": message.total_cost_usd, "num_turns": message.num_turns,
+                       "cost_usd": 0.0 if settings.open else message.total_cost_usd,  # local Gemma: no API cost
+                       "num_turns": message.num_turns,
                        "duration_ms": message.duration_ms}
         while context.events:
             yield context.events.pop(0)

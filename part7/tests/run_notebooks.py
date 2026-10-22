@@ -5,8 +5,8 @@
 
 Run it with the Python environment that has the requirements installed: the
 notebook kernel uses that interpreter. Provider keys come from one or more
---env-file values (only OPENAI_API_KEY, ANTHROPIC_API_KEY and TYPESAFE_API_KEY
-are read) or from
+--env-file values (only OPENAI_API_KEY, ANTHROPIC_API_KEY, TYPESAFE_API_KEY and the
+optional ARIZE_SPACE_ID / ARIZE_API_KEY for tracing are read) or from
 the process environment. Oracle must already be running (./oracle.sh start).
 
 Every code cell runs against the real providers and the local database. A
@@ -28,10 +28,13 @@ from nbclient import NotebookClient
 from nbclient.exceptions import CellExecutionError
 
 PART7 = Path(__file__).resolve().parents[1]
-KEYS = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "TYPESAFE_API_KEY"]
+KEYS = ["OPENAI_API_KEY", "ANTHROPIC_API_KEY", "TYPESAFE_API_KEY", "ARIZE_SPACE_ID", "ARIZE_API_KEY"]
 NOTEBOOKS = {
     "maturity": PART7 / "ai_maturity_form_factors/notebook/ai_maturity_form_factors_notebook.ipynb",
     "zero_to_hero": PART7 / "agent_memory/zero_to_hero/notebook/agent_memory_zero_to_hero.ipynb",
+    "maturity_eval": PART7 / "ai_maturity_form_factors/evaluation/notebook/ai_maturity_evaluation.ipynb",
+    "memory_eval": PART7 / "agent_memory/evaluation/notebook/agent_memory_evaluation.ipynb",
+    "retrieval_benchmark": PART7 / "retrieval_evaluation/notebook/beir_retrieval_benchmark.ipynb",
 }
 KERNELSPEC = {"name": "python3", "display_name": "Python 3 (ipykernel)", "language": "python"}
 

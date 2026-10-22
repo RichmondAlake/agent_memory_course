@@ -7,6 +7,7 @@ from fastapi.concurrency import run_in_threadpool
 from backend.config import settings
 from backend.core.memorizz_memo import runtime
 from backend.core.session import sessions
+from backend.core.tracing import tracing_status
 
 router = APIRouter(prefix="/api", tags=["meta"])
 
@@ -15,9 +16,13 @@ router = APIRouter(prefix="/api", tags=["meta"])
 def health() -> dict:
     return {
         "model": settings.model,
+        "provider": settings.provider,
+        "ollama_url": settings.ollama_url,
+        "embed_model": settings.embed_model,
         "memory": runtime.status(),
         "api_key_set": bool(settings.openai_api_key),
         "jev_key_set": bool(settings.typesafe_api_key),
+        "tracing": tracing_status(),
     }
 
 

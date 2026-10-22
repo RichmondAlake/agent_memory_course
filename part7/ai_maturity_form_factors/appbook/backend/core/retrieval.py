@@ -8,12 +8,14 @@ embeddings to 2-D/3-D for the latent-space viewer and runs the chosen filter str
 """
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 
 import numpy as np
 
 from backend.core import db, policy
+from backend.core.tracing import documents, traced
 
 _STOP = {"the", "a", "an", "and", "or", "of", "to", "in", "on", "is", "are", "do", "does", "i", "my", "for",
          "how", "what", "can", "me", "with", "be", "it", "you", "your", "this", "that", "from", "at", "as", "by",
@@ -140,49 +142,67 @@ def text_query(query: str) -> tuple[str, list[str]]:
     return (" ACCUM ".join("{%s}" % t for t in terms) if terms else "{__no_match__}"), terms
 
 
+
+def _retriever(name: str, query: str):
+    return traced(name, "RETRIEVER", **{"input.value": query})
+
+
+def _record_hits(span, hits: list) -> list:
+    if span:
+        span.set_attributes(documents("retrieval.documents", [h.doc_id for h in hits], [h.content for h in hits],
+                                      [h.score for h in hits]))
+    return hits
+
+
 # ── techniques ──────────────────────────────────────────────────────────────────
 def vector_search(query: str, k: int = 4) -> list[Hit]:
-    q = db.as_vector(db.embed_query(query))
-    with db.connection() as conn, conn.cursor() as cur:
-        cur.execute(VECTOR_SQL.format(k=int(k)), q=q)
-        return _hits(cur)
+    with _retriever("vector_search", query) as span:
+        q = db.as_vector(db.embed_query(query))
+        with db.connection() as conn, conn.cursor() as cur:
+            cur.execute(VECTOR_SQL.format(k=int(k)), q=q)
+            return _record_hits(span, _hits(cur))
 
 
 def keyword_search(query: str, k: int = 4) -> list[Hit]:
     kw, _ = text_query(query)
-    with db.connection() as conn, conn.cursor() as cur:
+    with _retriever("keyword_search", query) as span, db.connection() as conn, conn.cursor() as cur:
         cur.execute(KEYWORD_SQL.format(k=int(k)), kw=kw)
-        return _hits(cur)
+        return _record_hits(span, _hits(cur))
 
 
 def filtered_search(query: str, category: str, k: int = 4, mode: str = "pre", accuracy: int = 90) -> list[Hit]:
     """Vector search restricted to one category. Post-filter is computed explicitly (rank, then filter),
     because on a small table the optimizer would answer it with an exact scan and hide the under-return."""
-    if mode == "post":
-        return [h for h in vector_search(query, k) if h.category == category]
-    q = db.as_vector(db.embed_query(query))
-    sql = FILTERED_SQL.format(hint=FILTER_HINTS[mode], k=int(k), accuracy=int(accuracy))
-    with db.connection() as conn, conn.cursor() as cur:
-        cur.execute(sql, q=q, cat=category)
-        return _hits(cur)
+    with _retriever("filtered_search", query) as span:
+        if span:
+            span.set_attributes({"metadata": json.dumps({"category": category, "mode": mode})})
+        if mode == "post":
+            return _record_hits(span, [h for h in vector_search(query, k) if h.category == category])
+        q = db.as_vector(db.embed_query(query))
+        sql = FILTERED_SQL.format(hint=FILTER_HINTS[mode], k=int(k), accuracy=int(accuracy))
+        with db.connection() as conn, conn.cursor() as cur:
+            cur.execute(sql, q=q, cat=category)
+            return _record_hits(span, _hits(cur))
 
 
 def hybrid_search(query: str, k: int = 4, per_list: int = 10, rrf_k: int = 60) -> list[Hit]:
-    q = db.as_vector(db.embed_query(query))
-    kw, _ = text_query(query)
-    with db.connection() as conn, conn.cursor() as cur:
-        cur.execute(HYBRID_SQL.format(per_list=int(per_list), k=int(k)), q=q, kw=kw, rk=rrf_k)
-        ranked = cur.fetchall()
-        docs = _docs_by_id(cur)
-    return [Hit(d, docs[d]["title"], docs[d]["category"], docs[d]["version"], float(s), docs[d]["content"])
-            for d, _, _, s in ranked]
+    with _retriever("hybrid_search", query) as span:
+        q = db.as_vector(db.embed_query(query))
+        kw, _ = text_query(query)
+        with db.connection() as conn, conn.cursor() as cur:
+            cur.execute(HYBRID_SQL.format(per_list=int(per_list), k=int(k)), q=q, kw=kw, rk=rrf_k)
+            ranked = cur.fetchall()
+            docs = _docs_by_id(cur)
+        return _record_hits(span, [Hit(d, docs[d]["title"], docs[d]["category"], docs[d]["version"], float(s), docs[d]["content"])
+                                   for d, _, _, s in ranked])
 
 
 def graph_search(query: str, k: int = 4, seed_k: int = 5) -> list[Hit]:
-    q = db.as_vector(db.embed_query(query))
-    with db.connection() as conn, conn.cursor() as cur:
-        cur.execute(GRAPH_SQL.format(seed_k=int(max(seed_k, k)), k=int(k)), q=q)
-        return _hits(cur)
+    with _retriever("graph_search", query) as span:
+        q = db.as_vector(db.embed_query(query))
+        with db.connection() as conn, conn.cursor() as cur:
+            cur.execute(GRAPH_SQL.format(seed_k=int(max(seed_k, k)), k=int(k)), q=q)
+            return _record_hits(span, _hits(cur))
 
 
 TECHNIQUES = {"vector": vector_search, "keyword": keyword_search, "hybrid": hybrid_search, "graph": graph_search}
@@ -194,8 +214,9 @@ def search(query: str, technique: str = "vector", k: int = 4) -> list[Hit]:
 
 def retrieve(query: str, k: int = 3) -> list[dict]:
     """The unified retriever the workflow and the agent reuse: id, version, text, similarity."""
-    return [{"doc_id": h.doc_id, "version": h.version, "content": h.content, "similarity": h.score}
-            for h in vector_search(query, k)]
+    with _retriever("retrieve", query) as span:
+        return [{"doc_id": h.doc_id, "version": h.version, "content": h.content, "similarity": h.score}
+                for h in _record_hits(span, vector_search(query, k))]
 
 
 def context_block(hits: list[dict]) -> str:

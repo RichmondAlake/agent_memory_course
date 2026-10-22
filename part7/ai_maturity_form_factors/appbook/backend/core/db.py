@@ -15,6 +15,7 @@ import numpy as np
 
 from backend.config import settings
 from backend.core import policy
+from backend.core.tracing import as_json, traced
 
 _state = {"ready": False, "backend": "initializing", "error": None, "dim": 0, "removed_legacy": []}
 _lock = threading.Lock()
@@ -31,13 +32,14 @@ def unit(v) -> np.ndarray:
 
 
 def embed_documents(texts: list[str]) -> np.ndarray:
-    with _embed_lock:
+    with traced("embed documents", "EMBEDDING", **{"embedding.model_name": settings.embed_model,
+                                                   "input.value": as_json(texts)}), _embed_lock:
         return np.array([unit(v) for v in _embedder.embed(texts)], dtype=np.float32)
 
 
 def embed_query(text: str) -> np.ndarray:
     """fastembed applies nomic's query prefix inside query_embed."""
-    with _embed_lock:
+    with traced("embed query", "EMBEDDING", **{"embedding.model_name": settings.embed_model, "input.value": text}), _embed_lock:
         return unit(next(_embedder.query_embed(text)))
 
 

@@ -592,9 +592,10 @@ class LabSession:
         """Run the memory workload at the full stack in a fresh scope; every turn of every agent is measured.
 
         A separate lab session holds the workload, so it starts with empty memory and the same setup
-        (persona, runbook, tools, skill) whatever was sent on the Part pages; its rows are deleted at the end.
+        (persona, runbook, tools, skill) whatever was sent on the Part pages; its rows stay, so its MemoRizz traces appear
+        in the MemoRizz UI (MEMO_CLEANUP=1 deletes them at the end).
         The naive baseline answers each turn after both Memos, from its own transcript; it never compacts.
-        Stop run ends it before the next turn: the turns measured so far stay, and its rows are still deleted.
+        Stop run ends it before the next turn: the turns measured so far stay.
         """
         level, total = self.workload_level(), len(tokenomics.WORKLOAD)
         bench = LabSession()
@@ -645,7 +646,10 @@ class LabSession:
                 self.workload_state["state"] = "complete"
             self.workload_state["finished_at"] = time.time()
             try:
-                bench.cleanup()
+                if settings.cleanup_on_reset:
+                    bench.cleanup()
+                else:                                  # keep its rows: the run's traces stay visible
+                    bench.memorizz.close()
             except Exception:
                 pass
         return self.tokenomics()

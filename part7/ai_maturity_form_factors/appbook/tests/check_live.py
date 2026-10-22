@@ -98,8 +98,13 @@ def main() -> None:
     health = wait_until_ready()
     check("Oracle policy memory is ready", health["retrieval"]["ready"] and health["retrieval"]["backend"] == "oracle",
           str(health["retrieval"]))
-    check("Model is Claude Haiku 5.5 at low effort", health["model"] == "claude-haiku-5-5" and health["effort"] == "low",
-          f"{health['model']} / {health['effort']}")
+    if health.get("provider") == "ollama":
+        check("Model is Gemma 4 through Ollama, with a 32k context window",
+              health["model"].endswith("-32k") and health["open_models"]["status"] == "ready",
+              f"{health['model']} / {health['open_models']}")
+    else:
+        check("Model is Claude Haiku 5.5 at low effort", health["model"] == "claude-haiku-5-5" and health["effort"] == "low",
+              f"{health['model']} / {health['effort']}")
     ledger = {row["table"]: row["items"] for row in get("/api/memory")["ledger"]}
     check("Memory ledger lists every store", {"policy_docs", "loan_decisions", "agent_session_entries"} <= set(ledger), str(ledger))
     check("Policy holds 17 sections", ledger.get("policy_docs") == 17, str(ledger))

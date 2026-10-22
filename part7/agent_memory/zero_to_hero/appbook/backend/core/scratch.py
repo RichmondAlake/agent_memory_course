@@ -26,6 +26,7 @@ import requests
 
 from backend.config import settings
 from backend.core import tokenomics
+from backend.core.tracing import io, set_documents, set_output, set_tokens, traced
 
 # ── Oracle: one pool and the sql() helper (notebook 0.4) ─────────────────────
 oracledb.defaults.fetch_lobs = False
@@ -81,18 +82,23 @@ def llm():
     if _llm is None:
         from openai import OpenAI as OpenAIClient
 
-        _llm = OpenAIClient(api_key=settings.openai_api_key)
+        _llm = OpenAIClient(api_key=settings.openai_api_key, base_url=settings.openai_base_url)  # None: OpenAI
     return _llm
 
 
 def chat(instructions: str, messages: Any, tools: list | None = None, **options: Any):
     """One model call through the OpenAI Responses API (metered for the Tokenomics page)."""
     extra = {"tools": tools} if tools else {}
-    started = time.perf_counter()
-    response = llm().responses.create(model=settings.model, instructions=instructions, input=messages,
-                                      reasoning={"effort": "none"}, **extra, **options)
-    tokenomics.record_model(response, (time.perf_counter() - started) * 1000,
-                            {"instructions": instructions, "input": messages, "tools": tools or []})
+    for attempt in range(2 if settings.open else 1):
+        if attempt:   # a small open model sometimes ends its turn after a tool result without a word: nudge it once
+            messages = [*messages, {"role": "user", "content": "Answer my last request now, using the results above."}] if isinstance(messages, list) else messages
+        started = time.perf_counter()
+        response = llm().responses.create(model=settings.model, instructions=instructions, input=messages,
+                                          reasoning={"effort": "none"}, **extra, **options)
+        tokenomics.record_model(response, (time.perf_counter() - started) * 1000,
+                                {"instructions": instructions, "input": messages, "tools": tools or []})
+        if response.output_text.strip() or any(item.type == "function_call" for item in response.output):
+            break
     return response
 
 
@@ -320,8 +326,11 @@ class ScratchMemo:
     def run(self, query: str, **scope: Any) -> str:
         turn = Turn(query, scope)
         for layer in self.layers:
-            with tokenomics.layer_work(f"{layer.name} layer · read"):
+            with tokenomics.layer_work(f"{layer.name} layer · read"), \
+                    traced(f"{layer.name} read", "RETRIEVER", **{"input.value": query}) as span:
+                seen = len(turn.blocks), len(turn.history)
                 layer.read(turn)
+                set_documents(span, layer_documents(turn, *seen))
             if turn.answer:
                 break
         turn.answer = turn.answer or self.respond(self, turn)
@@ -330,6 +339,13 @@ class ScratchMemo:
                 layer.write(turn)
         self.last_turn = turn
         return turn.answer
+
+
+def layer_documents(turn: Turn, blocks: int, history: int) -> list[tuple]:
+    """What one layer's read() added to a turn: its context blocks and replayed messages, as (id, content, score)."""
+    return ([(label, text, None) for label, text in turn.blocks[blocks:]] +
+            [(m.get("role", "message"), m.get("content", ""), None) if isinstance(m, dict) else ("message", m, None)
+             for m in turn.history[history:]])
 
 
 def show_context(agent: ScratchMemo) -> list[dict[str, Any]]:
@@ -1036,11 +1052,16 @@ def jev_route(items: list[str]) -> list[dict[str, float]]:
         raise RuntimeError("TYPESAFE_API_KEY is not set: add it to appbook/.env to route with Jev.")
     questions = {f"item_{i}": {**QUESTION_JEV, "instructions": f"{QUESTION_JEV['instructions']}\n\nItem: {item}"}
                  for i, item in enumerate(items)}
-    response = requests.post(settings.jev_url, headers={"Authorization": f"Bearer {settings.typesafe_api_key}"},
-                             json={"model": "jev-latest", "questions": questions,
-                                   "state": {"task": "Answer each question about its own item only."}}, timeout=60)
-    response.raise_for_status()
-    answers = response.json()["answers"]
+    with traced("systemone jev-latest", "LLM", **{"llm.model_name": "jev-latest", "llm.provider": "typesafe"},
+                **io(questions)) as span:
+        response = requests.post(settings.jev_url, headers={"Authorization": f"Bearer {settings.typesafe_api_key}"},
+                                 json={"model": "jev-latest", "questions": questions,
+                                       "state": {"task": "Answer each question about its own item only."}}, timeout=60)
+        response.raise_for_status()
+        body = response.json()
+        answers = body["answers"]
+        set_output(span, answers)
+        set_tokens(span, (body.get("usage") or {}).get("input_tokens"), (body.get("usage") or {}).get("output_tokens"))
     return [{key: float(value) for key, value in answers[f"item_{i}"]["probabilities"].items()}
             for i in range(len(items))]
 

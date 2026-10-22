@@ -1,7 +1,10 @@
 """Memo with MemoRizz: the notebook's ``N.3 · With MemoRizz`` sections as a module.
 
-One ``OracleProvider`` (OpenAI embeddings at 256 dimensions, lazy HNSW
-indexes) is shared by the server. A lab session holds one ``MemorizzMemo``:
+One ``OracleProvider`` (256-dimensional embeddings, lazy HNSW indexes) is
+shared by the server. On open models it embeds through the scratch side's
+``embed()`` (nomic-embed-text through Ollama): MemoRizz's OpenAI embedding
+provider accepts only OpenAI's model names, and its Ollama one returns 768
+dimensions. A lab session holds one ``MemorizzMemo``:
 it rebuilds the agent from a fresh ``MemAgentBuilder`` with every ``with_...``
 call the notebook has made up to the Part being used. The name is fixed per
 session, so every rebuild updates the same saved agent (same ``agent_id``).
@@ -32,21 +35,32 @@ class Runtime:
             if self.ready:
                 return self.provider
             if not settings.openai_api_key:
-                self.error = ("OPENAI_API_KEY is not set. Copy .env.example to .env, add the key and restart; "
-                              "both agents use OpenAI for reasoning and 256-d embeddings.")
+                self.error = ("OPENAI_API_KEY is not set. Copy .env.example to .env and add the key, or set "
+                              "MEMO_PROVIDER=ollama to run open models on this machine, then restart.")
                 return None
+            if settings.open:
+                try:
+                    prepare_open_models()
+                except Exception as exc:  # noqa: BLE001 - reported on the status card
+                    self.error = (f"Ollama is not ready at {settings.ollama_url} ({type(exc).__name__}: "
+                                  f"{str(exc)[:160]}). Install Ollama from ollama.com and start it.")
+                    return None
             try:
                 import os
 
+                if settings.open:          # any OpenAI client built inside MemoRizz reaches Ollama too
+                    os.environ.update(OPENAI_API_KEY="ollama", OPENAI_BASE_URL=settings.openai_base_url)
                 os.environ.setdefault("OPENAI_API_KEY", settings.openai_api_key)
                 os.environ.setdefault("ORACLE_USER", settings.oracle_user)
                 os.environ.setdefault("ORACLE_PASSWORD", settings.oracle_password)
                 os.environ.setdefault("ORACLE_DSN", settings.oracle_dsn)
                 from memorizz import OracleProvider
 
-                provider = OracleProvider.from_env(
-                    index_policy="lazy", in_database_embedding=False, embedding_provider="openai",
-                    embedding_config={"model": settings.embed_model, "dimensions": settings.embed_dimensions})
+                embeddings = ({"embedding_provider": open_embeddings()} if settings.open else
+                              {"embedding_provider": "openai",
+                               "embedding_config": {"model": settings.embed_model,
+                                                    "dimensions": settings.embed_dimensions}})
+                provider = OracleProvider.from_env(index_policy="lazy", in_database_embedding=False, **embeddings)
                 preflight = provider.preflight()
                 if not preflight.get("ok"):
                     raise RuntimeError(f"preflight failed: {preflight.get('diagnostics')}")
@@ -77,6 +91,7 @@ class Runtime:
             "database": preflight.get("version_full"),
             "index_policy": preflight.get("index_policy"),
             "embedding": {"model": settings.embed_model, "dimensions": settings.embed_dimensions},
+            "provider": settings.provider,
         }
 
     def close(self) -> None:
@@ -92,10 +107,72 @@ class Runtime:
 runtime = Runtime()
 
 
+def prepare_open_models() -> None:
+    """Open models: pull what Ollama is missing, then make the 32k-context variant the agents use.
+
+    Ollama's default context window is 4,096 tokens; a longer request (MemoRizz's carry every tool schema and
+    a memory block) would be cut without an error.
+    """
+    import requests
+
+    def call(path: str, **body: Any) -> dict:
+        response = requests.post(f"{settings.ollama_url}{path}", json={**body, "stream": False}, timeout=3600)
+        response.raise_for_status()
+        return response.json()
+
+    tags = requests.get(f"{settings.ollama_url}/api/tags", timeout=10)
+    tags.raise_for_status()
+    installed = {model["name"] for model in tags.json().get("models", [])}
+    for name in (settings.open_model, settings.embed_model):
+        if name not in installed and f"{name}:latest" not in installed:
+            call("/api/pull", model=name)
+    call("/api/create", model=settings.model, parameters={"num_ctx": settings.open_context},
+         **{"from": settings.open_model})
+
+
+def open_embeddings():
+    """MemoRizz's embeddings on open models: the scratch side's embed() (nomic-embed-text at 256 dimensions)."""
+    from memorizz.embeddings import BaseEmbeddingProvider, EmbeddingManager
+
+    class Nomic(BaseEmbeddingProvider):
+        def get_embedding(self, text: str, **kwargs: Any) -> list[float]:
+            return list(scratch.embed([text])[0])
+
+        def get_embeddings(self, texts: list[str], **kwargs: Any) -> list[list[float]]:
+            return [list(vector) for vector in scratch.embed(texts)]
+
+        def get_dimensions(self) -> int:
+            return settings.embed_dimensions
+
+        def get_default_model(self) -> str:
+            return settings.embed_model
+
+    class OpenEmbeddings(EmbeddingManager):
+        def _create_provider(self):
+            return Nomic(self.config)
+
+    return OpenEmbeddings("ollama", {"model": settings.embed_model})
+
+
 def memorizz_model():
     from memorizz.llms.openai import OpenAI as MemorizzOpenAI
 
-    return MemorizzOpenAI(api_key=settings.openai_api_key, model=settings.model, reasoning_effort="none")
+    model = MemorizzOpenAI(api_key=settings.openai_api_key, model=settings.model, reasoning_effort="none",
+                           base_url=settings.openai_base_url)
+    if settings.open:   # MemoRizz stops on an empty reply; an open model's empty turn is nudged once
+        create = model.client.chat.completions.create
+
+        def create_again_if_empty(**kwargs: Any):
+            response = create(**kwargs)
+            if not kwargs.get("stream"):
+                message = response.choices[0].message
+                if not message.tool_calls and not (message.content or "").strip():
+                    nudge = {"role": "user", "content": "Answer my last request now, using the results above."}
+                    response = create(**{**kwargs, "messages": [*kwargs["messages"], nudge]})
+            return response
+
+        model.client.chat.completions.create = create_again_if_empty
+    return model
 
 
 _governed: list | None = None
